@@ -6,6 +6,10 @@
    Find the largest palindrome made from the product of two 3-digit
    numbers. *)
 
+(* Not Belphegor's number!  It just looks similar. *)
+let belphegor = 1000066600001;;
+
+(* Returns a list of products of its two arguments. *)
 let prods lwr upr =
   let rec aux i =
     let rec aux' i' =
@@ -19,7 +23,36 @@ let prods lwr upr =
   in
   aux upr;;
 
+(* Returns order of magnitude of a number. *)
 let magnitude x = int_of_float (log10 (float_of_int x));;
+
+(* Returns the nth significant figure from a number.  Eg. the 0th sig.
+   fig of 12345 is 5, the 2nd is 3 (zero-indexed). *)
+let nth_sig_fig x n =
+  (x / int_of_float (10. ** (float_of_int n))) mod 10;;
+
+let is_palindrome x =
+  let rec aux lwr upr =
+    if (nth_sig_fig x lwr) = (nth_sig_fig x upr)
+    then
+      if upr - lwr < 2
+      then true
+      else aux (lwr + 1) (upr - 1)
+    else
+      false
+  in
+  aux 0 (magnitude x);;
+
+let sorted_prods =
+  List.sort_uniq (fun x y -> if x > y then -1 else 1) (prods 100 999);;
+
+let palindromes =
+  List.filter (is_palindrome) sorted_prods;;
+
+let largest = match palindromes with hd :: tl -> hd | [] -> -1;;
+
+
+(* Remnants from a failed approach: *)
 
 (* Most Significant Figure. *)
 let msf x = x / int_of_float (10. ** float_of_int (magnitude x));;
@@ -37,32 +70,4 @@ let inner x =
   in
   ((x - rightmost) - leftmost) / 10;;
 
-let rec is_palindrome x =
-  let m = magnitude x
-  in
-  let fig n = 0
-
-  let rec aux  i =
-    if x' < 10
-    then
-      true
-    else
-      let m = (fig ) and l = (lsf x')
-      in
-      if m = l
-      then (* recurse *)
-      else false
-  in aux 0;;
-
-let belphegor = 1000066600001;; (* Well, sorta. *)
-
-let _ = is_palindrome 12321;;
-let _ = is_palindrome 82321;;
-let _ = is_palindrome 1234;;
-let _ = is_palindrome 12345;;
-let _ = is_palindrome belphegor;;
-
-let _ = let sorted_prods =
-          List.sort (fun x y -> if x > y then -1 else 1) (prods 100 102)
-        in List.filter (is_palindrome) sorted_prods;;
 
