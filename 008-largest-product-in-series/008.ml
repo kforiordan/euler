@@ -27,6 +27,9 @@
 (* Find the thirteen adjacent digits in the 1000-digit number that
    have the greatest product. What is the value of this product? *)
 
+
+let window_size = 13;;
+
 let s = "
 73167176531330624919225119674426574742355349194934
 96983520312774506326239578318016984801869478851843
@@ -50,23 +53,25 @@ let s = "
 71636269561882670428252483600823257530420752963450
 ";;
 
+(* Takes a string of numbers represented as ascii chars, as above, and
+   from it makes a list of single-digit ints. *)
 let str_to_int_list s =
+  let ascii_to_int c = int_of_char c - 48
+  in
   let rec aux i =
     if i = String.length s then []
     else
       match s.[i] with
-        '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' ->
-               s.[i] :: aux (i+1)
-              | _ -> aux (i+1)
+        '0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9' -> ascii_to_int s.[i] :: aux (i+1)
+        | _ -> aux (i+1)
   in
   aux 0;;
 
-let numbers = str_to_int_list s;;
-
-let window_size = 4;;
-
+(* Given a list of ints, generates a list of lists of ints, each one
+   being an n-int sequence, e.g. each one is of length 13.  I've used
+   the term 'window' kinda like how TCP and SQL use it.  *)
 let rec windows list size =
-  let rec add_to_window list' acc =
+  let rec create_window list' acc =
     match list' with
       [] -> acc
     | hd :: tl ->
@@ -74,10 +79,21 @@ let rec windows list size =
        in
        if List.length acc' = size
        then acc'
-       else add_to_window tl acc'
+       else create_window tl acc'
   in
-  match list with
-    [] -> 
-  add_to_window list []
+  let rec windows' list =
+    match list with
+      [] -> []
+    | hd :: tl -> (create_window list []) :: windows' tl
+  in windows' list;;
 
-let _ = windows numbers window_size;;
+(* Calculate products for each window. *)
+let prods l =
+  List.map (List.fold_left (fun x y -> x * y) 1) l;;
+
+let sorted_prods l = List.sort (fun x y -> if x > y then -1 else 1) (prods l);;
+
+let largest_prod numbers window_size =
+  List.hd (sorted_prods (windows numbers window_size));;
+
+let solution = largest_prod (str_to_int_list s) window_size;;
