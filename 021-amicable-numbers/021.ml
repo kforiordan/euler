@@ -49,7 +49,12 @@ let amicable x =
     if x = x' then Some sum
   else None;;
 
-let amicable_pairs_upto n =
+(* amicable_pairs_upto returns a list of unique amicable pairs,
+   something like [(220, 284); (1184, 1210); ...].  This function,
+   suffixed _001, adds every pair found and then removes duplicates
+   before returning the list.  Function _002 is less complex and runs
+   faster. *)
+let amicable_pairs_upto_001 n =
   let rec aux i acc =
     if i = n
     then acc
@@ -71,6 +76,24 @@ let amicable_pairs_upto n =
     else if a1 < a2 then -1 else 1
   in
   List.sort_uniq (pair_cmp) (aux 1 []);;
+
+(* Whereas above duplicate pairs were removed, here we avoid adding
+   them in the first place. *)
+let amicable_pairs_upto_002 n =
+  let rec aux i acc =
+    if i = n
+    then acc
+    else
+      let i' = amicable i in
+      match i' with
+        None -> aux (i+1) acc
+      | Some i'' -> if i > i''
+                    then aux (i+1) ((i, i'') :: acc)
+                    else aux (i+1) acc
+  in
+  aux 1 [];;
+
+let amicable_pairs_upto = amicable_pairs_upto_002;;
 
 let solution =
   List.fold_left (+) 0
