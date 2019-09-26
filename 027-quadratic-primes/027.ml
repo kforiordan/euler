@@ -21,4 +21,52 @@
    Find the product of the coefficients, a and b, for the quadratic expression
    that produces the maximum number of primes for consecutive values of n,
    starting with n=0.
-*)
+ *)
+
+(* Why does the question state the product of the terms a and b?
+   Pretty sure this is an implementation clue that I don't see the
+   relevance of. *)
+
+
+(* Borrowed from 010, with int_sqrt function, also from 010, incorporated. *)
+let is_prime x =
+  let int_sqrt n = int_of_float (sqrt(float_of_int n)) in
+  let upper_limit = int_sqrt x in
+  let rec aux x' =
+    if x' > upper_limit
+    then true
+    else
+      if x mod x' = 0
+      then false
+      else aux (x' + 1)
+  in
+  match x with
+    0 | 1 -> false
+    | _ -> aux 2;;
+
+let hmm =
+let max_a = 9
+and max_b = 10
+and first_n = 0
+    in
+    let min_a = first_n - max_a
+    and min_b = first_n - max_b
+    in
+    let gen_euler a b = fun n -> (n * n) + (a * n) + b
+    in
+    let rec f n a b i results =
+      if b > max_b
+      then if a > max_a
+           then results
+           else f first_n (a+1) min_b 0 results
+      else
+        let euler = gen_euler a b in
+        let r = euler n in
+        if is_prime r
+        then f (n+1) a b (i+1) results
+        else
+          if i = 0
+          then f first_n a (b+1) 0 ((a,b,i) :: results)
+          else f (n+1) a b (i+1) results
+    in f first_n min_a min_b 0 [];;
+
