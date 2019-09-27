@@ -30,43 +30,77 @@
 
 (* Borrowed from 010, with int_sqrt function, also from 010, incorporated. *)
 let is_prime x =
-  let int_sqrt n = int_of_float (sqrt(float_of_int n)) in
-  let upper_limit = int_sqrt x in
-  let rec aux x' =
-    if x' > upper_limit
-    then true
-    else
-      if x mod x' = 0
-      then false
-      else aux (x' + 1)
-  in
-  match x with
-    0 | 1 -> false
-    | _ -> aux 2;;
-
-let hmm =
-let max_a = 9
-and max_b = 10
-and first_n = 0
-    in
-    let min_a = first_n - max_a
-    and min_b = first_n - max_b
-    in
-    let gen_euler a b = fun n -> (n * n) + (a * n) + b
-    in
-    let rec f n a b i results =
-      if b > max_b
-      then if a > max_a
-           then results
-           else f first_n (a+1) min_b 0 results
+  if x < 2 then false
+  else
+    let int_sqrt n = int_of_float (sqrt(float_of_int n)) in
+    let upper_limit = int_sqrt x in
+    let rec aux x' =
+      if x' > upper_limit
+      then true
       else
-        let euler = gen_euler a b in
-        let r = euler n in
-        if is_prime r
-        then f (n+1) a b (i+1) results
-        else
-          if i = 0
-          then f first_n a (b+1) 0 ((a,b,i) :: results)
-          else f (n+1) a b (i+1) results
-    in f first_n min_a min_b 0 [];;
+        if x mod x' = 0
+        then false
+        else aux (x' + 1)
+    in
+    aux 2;;
 
+(* Testing is_prime.  I really need some sort of test framework.  And
+   a module for functions I reuse. *)
+let test_cases = [(3, true); (4, false); (97, true); (99, false);
+                  (243, false); (257, true)];;
+let rec test f l =
+  match l with
+  | [] -> "yay"
+  | (arg, result) :: tl -> if f arg = result
+                           then test f tl
+                           else "boo: " ^ string_of_int arg;;
+let _ = test (is_prime) test_cases;;
+
+
+(* Given a and b, returns a function like euler's n^2 + an + b *)
+let gen_euler a b = fun n -> (n * n) + (a * n) + b;;
+
+(* Given an euler function and an n to start with, returns the number
+   of primes that function generates. *)
+let rec count_primes f n = if is_prime (f n)
+                           then count_primes (f) (n+1)
+                           else n;;
+
+
+(* Testing the gen_euler and count_primes functions *)
+let f = gen_euler 1 41;;
+let _ = if count_primes f 0 = 40 then "yay" else "boo";;
+
+let f = gen_euler (-79) 1601;;
+let _ = if count_primes f 0 = 80 then "yay" else "boo";;
+
+
+let trial_euler_functions (min_a, max_a) (min_b, max_b) =
+  let rec f a acc =
+    let rec g b acc =
+      if b > max_b
+      then acc
+      else g (b+1) ((a, b, (count_primes (gen_euler a b) 0)) :: acc)
+    in
+    if a > max_a
+    then acc
+    else (f (a+1) (g min_b [])) @ acc
+  in f min_a [];;
+
+let largest_euler_function f a b =
+  let largest_n (a, b, n) (a', b', n') =
+    if n > n' then (a, b, n) else (a', b', n')
+  in List.fold_left (largest_n) (0,0,-1) (f a b);;
+
+let first_n = 0;;
+let a = (-2, 2) and b = (7, 9);;
+let a = (-9, 9) and b = (-10, 10);;
+let a = (-99, 99) and b = (-100, 100);;
+
+(* Stack overflow during evaluation (looping recursion?).  Raised by
+   primitive operation at file "stdlib.ml", line 296, characters 22-31
+   *)
+let a = (-999, 999) and b = (-1000, 1000);;
+
+
+let _ = largest_euler_function (trial_euler_functions) a b;;
