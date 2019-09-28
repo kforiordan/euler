@@ -76,16 +76,21 @@ let _ = if count_primes f 0 = 80 then "yay" else "boo";;
 
 
 let trial_euler_functions (min_a, max_a) (min_b, max_b) =
-  let rec f a acc =
-    let rec g b acc =
+  let rec vary_a a acc =
+    let rec vary_b b acc' =
       if b > max_b
-      then acc
-      else g (b+1) ((a, b, (count_primes (gen_euler a b) 0)) :: acc)
+      then acc'
+      else
+        let euler = gen_euler a b in
+        let count = count_primes (euler) 0 in
+        vary_b (b+1) ((a, b, count) :: acc')
     in
     if a > max_a
     then acc
-    else (f (a+1) (g min_b [])) @ acc
-  in f min_a [];;
+    else
+      let killer_bees = vary_b min_b [] in
+      vary_a (a+1) (killer_bees @ acc)
+  in vary_a min_a [];;
 
 let largest_euler_function f a b =
   let largest_n (a, b, n) (a', b', n') =
@@ -93,14 +98,10 @@ let largest_euler_function f a b =
   in List.fold_left (largest_n) (0,0,-1) (f a b);;
 
 let first_n = 0;;
-let a = (-2, 2) and b = (7, 9);;
-let a = (-9, 9) and b = (-10, 10);;
-let a = (-99, 99) and b = (-100, 100);;
-
-(* Stack overflow during evaluation (looping recursion?).  Raised by
-   primitive operation at file "stdlib.ml", line 296, characters 22-31
-   *)
 let a = (-999, 999) and b = (-1000, 1000);;
 
-
-let _ = largest_euler_function (trial_euler_functions) a b;;
+let solution =
+  let (a', b', n) =
+    largest_euler_function (trial_euler_functions) a b
+  in
+  a' * b';;
