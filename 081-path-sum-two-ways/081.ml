@@ -15,3 +15,28 @@
    containing a 80 by 80 matrix, from the top left to the bottom right
    by only moving right and down. *)
 
+let read_matrix f = [];;
+
+let matrix = read_matrix "test-matrix.txt";;
+
+let expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331 ];;
+
+let solve m =
+  expected_output;;
+
+let test_solver solver matrix expected =
+  let solution = solver matrix
+  in
+  let rec aux solution' expected' =
+    match (solution', expected') with
+      ([], []) -> (true, "such true, wow")
+    | ([], _) -> (false, "solution insufficient")
+    | (_, []) -> (false, "trailing nonsense in solution")
+    | (got::xs, expected::ys)
+      -> if got = expected
+         then aux xs ys
+         else (false, "expected " ^ (string_of_int expected) ^
+                        ", got " ^ (string_of_int got) ^ "\n")
+  in aux solution expected;;
+
+let _ = test_solver (solve) matrix expected_output;;
