@@ -10,12 +10,42 @@ let rec digits n = if n < 10
                    then [n]
                    else (n mod 10) :: (digits (n / 10));;
 
-let rec factorial n =  if n = 1
+let rec factorial n =  if n = 0
                        then 1
                        else n * factorial (n - 1);;
 
-let sum_of_factorials_of_digits n =
-  List.fold_left (+) 0 (List.map (factorial) (digits n));;
+(* We're using Jane Street's Core, rather than the Ocaml's own, and I
+   could not get fold_left to work without labelling the arguments -
+   making it incompatible with the standard library. *)
+
+let factorials_of_digits n = List.map ~f:(factorial) (digits n);;
+
+let sum_of_factorials_of_digits n = List.fold_left
+   (factorials_of_digits n) ~init:0 ~f:(+);;
+
+let is_curious n = n = sum_of_factorials_of_digits n;;
+
+let _ = is_curious 145;;
 
 (* Now to find all the other curious numbers.  I'll just brute force
    my way through the naturals. *)
+
+let curious_numbers low high =
+  let rec aux i acc =
+    if i > high
+    then acc
+    else
+      if is_curious i
+      then aux (i+1) (i :: acc)
+      else aux (i+1) acc
+  in aux low [];;
+
+(* No need to try *all* the naturals: there are no curious numbers
+   above 10,000,000 because at this point every additional digit adds
+   more than 9! to the number.
+
+   I bet there are a whole bunch of other optimisations, but this is
+   fine. *)
+let all_curious_numbers = curious_numbers 3 10000000;;
+
+let solution = List.fold_left (all_curious_numbers) ~init:0 ~f:(+);;
