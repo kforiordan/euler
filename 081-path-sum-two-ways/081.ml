@@ -15,11 +15,45 @@
    containing a 80 by 80 matrix, from the top left to the bottom right
    by only moving right and down. *)
 
-let read_matrix f = [];;
+open Base;;
 
-let matrix = read_matrix "test-matrix.txt";;
+type area = { x:int; y: int }
 
-let expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331 ];;
+(* This is a kinda heavyweight way of determining matrix dimensions *)
+let dimensions file =
+  let lines = In_channel.read_lines file
+  in
+  let rec aux prev_x lines' =
+    match lines' with
+      [] -> prev_x
+    | hd :: tl ->
+       let n = List.length (Base.String.split ~on:',' hd)
+       in if prev_x = -1 || prev_x = n
+          then aux n tl
+          else -2
+  in { x = (aux (-1) lines); y = (List.length lines) };;
+
+
+(* Given a string of comma-separated numbers, returns an array of
+   those numbers. *)
+let array_of_line line =
+  Array.of_list (
+      List.map ~f:Int.of_string (
+          Base.String.split ~on:',' line));;
+
+
+(* Reads from file, returns matrix.  Checks dimensions first, then
+   ignores that check. *)
+let read_matrix file =
+  let dimensions' = dimensions file in
+  let matrix = Array.create ~len:dimensions'.y [||] in
+  let lines = In_channel.read_lines file in
+  let rec aux i lines' =
+    match lines' with
+      [] -> matrix
+    | hd :: tl -> (matrix.(i) <- (array_of_line hd);
+                   aux (i+1) tl)
+  in aux 0 lines;;
 
 let solve m =
   expected_output;;
