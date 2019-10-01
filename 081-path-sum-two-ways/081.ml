@@ -20,7 +20,9 @@ open Base;;
 type area = { x:int; y: int }
 
 (* This is a kinda heavyweight way of determining matrix dimensions *)
-let dimensions file =
+type matrix = Filename of string | Matrix of int array array;;
+
+let dimensions_file file =
   let lines = In_channel.read_lines file
   in
   let rec aux prev_x lines' =
@@ -33,6 +35,15 @@ let dimensions file =
           else -2
   in { x = (aux (-1) lines); y = (List.length lines) };;
 
+let dimensions_matrix matrix =
+  let len = Array.length matrix
+  in if len = 0 then { x = 0; y = 0 }
+     else { x = len; y = Array.length (matrix.(0)) };;
+
+let dimensions matrix =
+  match matrix with
+    Filename f -> dimensions_file f
+  | Matrix m -> dimensions_matrix m;;
 
 (* Given a string of comma-separated numbers, returns an array of
    those numbers. *)
