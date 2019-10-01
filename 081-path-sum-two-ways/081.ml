@@ -52,7 +52,6 @@ let array_of_line line =
       List.map ~f:Int.of_string (
           Base.String.split ~on:',' line));;
 
-
 (* Reads from file, returns matrix.  Checks dimensions first, then
    ignores that check. *)
 let read_matrix file =
@@ -66,8 +65,15 @@ let read_matrix file =
                    aux (i+1) tl)
   in aux 0 lines;;
 
+(* We start at (0, dimy), and finish at (dimx, 0), decreasing y or increasing x with each step *).
+
 let solve m =
-  expected_output;;
+  let (max_x, max_y) =
+    let d = dimensions m in (d.x, d.y)
+  in (max_x, max_y);;
+
+let matrix = read_matrix "test-matrix.txt";;
+let _ = solve matrix;;
 
 let test_solver solver matrix expected =
   let solution = solver matrix
@@ -80,8 +86,13 @@ let test_solver solver matrix expected =
     | (got::xs, expected::ys)
       -> if got = expected
          then aux xs ys
-         else (false, "expected " ^ (string_of_int expected) ^
-                        ", got " ^ (string_of_int got) ^ "\n")
+         else (false, "expected " ^ (Int.to_string expected) ^
+                        ", got " ^ (Int.to_string got) ^ "\n")
   in aux solution expected;;
 
+let matrix = read_matrix "test-matrix.txt";;
+
+let expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331; 999 ];;
+
 let _ = test_solver (solve) matrix expected_output;;
+
