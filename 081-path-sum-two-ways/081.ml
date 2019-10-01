@@ -15,12 +15,14 @@
    containing a 80 by 80 matrix, from the top left to the bottom right
    by only moving right and down. *)
 
+open Core;;
 open Base;;
 
 type area = { x:int; y: int }
 
 (* This is a kinda heavyweight way of determining matrix dimensions *)
-type matrix = Filename of string | Matrix of int array array;;
+type matrix = Matrix_filename of string | Matrix of int array array;;
+
 
 let dimensions_file file =
   let lines = In_channel.read_lines file
@@ -32,21 +34,22 @@ let dimensions_file file =
        let n = List.length (Base.String.split ~on:',' hd)
        in if prev_x = -1 || prev_x = n
           then aux n tl
-          else -2
+          else -2  (* Should probably raise an exception here *)
   in { x = (aux (-1) lines); y = (List.length lines) };;
 
 let dimensions_matrix matrix =
   let len = Array.length matrix
   in if len = 0 then { x = 0; y = 0 }
-     else { x = len; y = Array.length (matrix.(0)) };;
+     else { y = len; x = Array.length (matrix.(0)) };;
 
 let dimensions matrix =
   match matrix with
-    Filename f -> dimensions_file f
+    Matrix_filename f -> dimensions_file f
   | Matrix m -> dimensions_matrix m;;
 
 (* Given a string of comma-separated numbers, returns an array of
-   those numbers. *)
+   those numbers.  This is a vector of points with the same y value,
+   indexed by x value. *)
 let array_of_line line =
   Array.of_list (
       List.map ~f:Int.of_string (
@@ -55,8 +58,8 @@ let array_of_line line =
 (* Reads from file, returns matrix.  Checks dimensions first, then
    ignores that check. *)
 let read_matrix file =
-  let dimensions' = dimensions file in
-  let matrix = Array.create ~len:dimensions'.y [||] in
+  let dimensions' = dimensions_file file in
+  let matrix = Array.create ~len:dimensions'.x [||] in
   let lines = In_channel.read_lines file in
   let rec aux i lines' =
     match lines' with
@@ -65,15 +68,23 @@ let read_matrix file =
                    aux (i+1) tl)
   in aux 0 lines;;
 
-(* We start at (0, dimy), and finish at (dimx, 0), decreasing y or increasing x with each step *).
-
+(* Ok, so these are not Cartesian coordinates.  This is a matrix, and
+   it's kinda backwards.  Best not to think about it.  We start at
+   0,0, and move towards the opposite corner increasing either by one
+   at each step, and recording the cheapest path. *)
 let solve m =
-  let (max_x, max_y) =
-    let d = dimensions m in (d.x, d.y)
-  in (max_x, max_y);;
+  let (min_x, min_y) = (0, 0) and
+      (max_x, max_y) = let d = dimensions_matrix m in (d.x, d.y) in
+  let rec aux x y path =
+    if x = (max_x - 1)
+    then
+      if y = (max_y - 1)
+      then m.(y).(x) :: path
+      else aux x (y+1) (m.(y).(x) :: path)
+    else
+      aux (x+1) y (m.(y).(x) :: path)
+  in List.rev (aux min_x min_y []);;
 
-let matrix = read_matrix "test-matrix.txt";;
-let _ = solve matrix;;
 
 let test_solver solver matrix expected =
   let solution = solver matrix
@@ -89,6 +100,7 @@ let test_solver solver matrix expected =
          else (false, "expected " ^ (Int.to_string expected) ^
                         ", got " ^ (Int.to_string got) ^ "\n")
   in aux solution expected;;
+
 
 let matrix = read_matrix "test-matrix.txt";;
 
