@@ -20,10 +20,9 @@ open Base;;
 
 type area = { x:int; y: int }
 
-(* This is a kinda heavyweight way of determining matrix dimensions *)
 type matrix = Matrix_filename of string | Matrix of int array array;;
 
-
+(* This is a kinda heavyweight way of determining matrix dimensions *)
 let dimensions_file file =
   let lines = In_channel.read_lines file
   in
@@ -72,18 +71,51 @@ let read_matrix file =
    it's kinda backwards.  Best not to think about it.  We start at
    0,0, and move towards the opposite corner increasing either by one
    at each step, and recording the cheapest path. *)
+
 let solve m =
   let (min_x, min_y) = (0, 0) and
-      (max_x, max_y) = let d = dimensions_matrix m in (d.x, d.y) in
-  let rec aux x y path =
-    if x = (max_x - 1)
+      (max_x, max_y) =
+        let d = dimensions_matrix m in ((d.x - 1), (d.y - 1))
+  in
+  if (max_x < 0 || max y < 0)
+  then []
+  else
+    let x = min_x and y = min_y
+    in
+    let right (x, y) = if x + 1 <= max_x then ((x+1),y) else (x,y)
+    and down (x, y) = if y + 1 <= max_y then (x,(y+1)) else (x,y)
+    in
+    let cheaper (x,y) (x',y') =
+      
+    let cost (from_x, from_y) (to_x, to_y) =
+      if (from_x, from_y) = (to_x, to_y)
+      then (0, [])
+      else
+        m.(to_x).(to_y) +
+          cheaper (cost (to_x
+        m.(to_x).(to_y) + cheaper (right (x, y)) (down (x, y))
+    in
+    if right (x, y) = (x, y)
     then
-      if y = (max_y - 1)
-      then m.(y).(x) :: path
-      else aux x (y+1) (m.(y).(x) :: path)
+      if down (x, y) = (x, y)
+      then m.(x).(y)
+      else 
     else
-      aux (x+1) y (m.(y).(x) :: path)
-  in List.rev (aux min_x min_y []);;
+      m.(x)
+    let aux x y =
+in    in
+    aux min_x min_y;;
+
+
+
+  (*   if x = (max_x - 1)
+   *   then
+   *     if y = (max_y - 1)
+   *     then m.(y).(x) :: path
+   *     else aux x (y+1) (m.(y).(x) :: path)
+   *   else
+   *     aux (x+1) y (m.(y).(x) :: path)
+   * in List.rev (aux min_x min_y []);; *)
 
 
 let test_solver solver matrix expected =
@@ -105,6 +137,12 @@ let test_solver solver matrix expected =
 let matrix = read_matrix "test-matrix.txt";;
 
 let expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331; 999 ];;
+
+(* 131,673,234,103,18
+ * 201,96,342,965,150
+ * 630,803,746,422,111
+ * 537,699,497,121,956
+ * 805,732,524,37,331 *)
 
 let _ = test_solver (solve) matrix expected_output;;
 
