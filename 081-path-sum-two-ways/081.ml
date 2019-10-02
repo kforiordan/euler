@@ -20,8 +20,6 @@ open Base;;
 
 type area = { x:int; y: int }
 
-type matrix = Matrix_filename of string | Matrix of int array array;;
-
 (* This is a kinda heavyweight way of determining matrix dimensions *)
 let dimensions_file file =
   let lines = In_channel.read_lines file
@@ -41,10 +39,12 @@ let dimensions_matrix matrix =
   in if len = 0 then { x = 0; y = 0 }
      else { y = len; x = Array.length (matrix.(0)) };;
 
-let dimensions matrix =
-  match matrix with
-    Matrix_filename f -> dimensions_file f
-  | Matrix m -> dimensions_matrix m;;
+(* type matrix = Matrix_filename of string | Matrix of int array array;;
+ *
+ * let dimensions matrix =
+ *   match matrix with
+ *     Matrix_filename f -> dimensions_file f
+ *   | Matrix m -> dimensions_matrix m;; *)
 
 (* Given a string of comma-separated numbers, returns an array of
    those numbers.  This is a vector of points with the same y value,
@@ -67,44 +67,40 @@ let read_matrix file =
                    aux (i+1) tl)
   in aux 0 lines;;
 
-(* Ok, so these are not Cartesian coordinates.  This is a matrix, and
-   it's kinda backwards.  Best not to think about it.  We start at
-   0,0, and move towards the opposite corner increasing either by one
-   at each step, and recording the cheapest path. *)
 
-let solve m =
-  let (min_x, min_y) = (0, 0) and
-      (max_x, max_y) =
-        let d = dimensions_matrix m in ((d.x - 1), (d.y - 1))
-  in
-  if (max_x < 0 || max y < 0)
-  then []
-  else
-    let x = min_x and y = min_y
-    in
-    let right (x, y) = if x + 1 <= max_x then ((x+1),y) else (x,y)
-    and down (x, y) = if y + 1 <= max_y then (x,(y+1)) else (x,y)
-    in
-    let cheaper (x,y) (x',y') =
-      
-    let cost (from_x, from_y) (to_x, to_y) =
-      if (from_x, from_y) = (to_x, to_y)
-      then (0, [])
-      else
-        m.(to_x).(to_y) +
-          cheaper (cost (to_x
-        m.(to_x).(to_y) + cheaper (right (x, y)) (down (x, y))
-    in
-    if right (x, y) = (x, y)
-    then
-      if down (x, y) = (x, y)
-      then m.(x).(y)
-      else 
-    else
-      m.(x)
-    let aux x y =
-in    in
-    aux min_x min_y;;
+(* let solve m =
+ *   let (min_x, min_y) = (0, 0) and
+ *       (max_x, max_y) =
+ *         let d = dimensions_matrix m in ((d.x - 1), (d.y - 1))
+ *   in
+ *   if (max_x < 0 || max y < 0)
+ *   then []
+ *   else
+ *     let x = min_x and y = min_y
+ *     in
+ *     let right (x, y) = if x + 1 <= max_x then ((x+1),y) else (x,y)
+ *     and down (x, y) = if y + 1 <= max_y then (x,(y+1)) else (x,y)
+ *     in
+ *     let cheaper (x,y) (x',y') =
+ *       
+ *     let cost (from_x, from_y) (to_x, to_y) =
+ *       if (from_x, from_y) = (to_x, to_y)
+ *       then (0, [])
+ *       else
+ *         m.(to_x).(to_y) +
+ *           cheaper (cost (to_x
+ *         m.(to_x).(to_y) + cheaper (right (x, y)) (down (x, y))
+ *     in
+ *     if right (x, y) = (x, y)
+ *     then
+ *       if down (x, y) = (x, y)
+ *       then m.(x).(y)
+ *       else 
+ *     else
+ *       m.(x)
+ *     let aux x y =
+ * in    in
+ *     aux min_x min_y;; *)
 
 
 
@@ -134,7 +130,37 @@ let test_solver solver matrix expected =
   in aux solution expected;;
 
 
+let path m =
+ let (min_x, min_y) = (0, 0) and
+     (max_x, max_y) =
+       let d = dimensions_matrix m in ((d.x - 1), (d.y - 1))
+ in
+ if max_y < min_y (* || max_x < min_x *)
+ then
+   (* An empty matrix.  No problem, so no solution. *)
+   []
+ else
+   let right (x, y) = (x+1, y) and down (x, y) = (x, y+1)
+       and in_bounds (x, y) = if x <= max_x && y <= max_y then true else false
+   in
+   let next_hops (x, y) = List.filter ~f:in_bounds [right(x,y); down(x,y)]
+   in
+   let rec cheapest_path_from (x, y) =
+     match next_hops (x, y) with
+       [] -> m.(x).(y)  (* { cost = m.(x).(y); hop = (x, y) } *)
+     | hd :: hd' :: tl ->
+        let cheapest_path = 
+          let (x1,y1)::tl1 = cheapest_path_from hd and (x2,y2) = cheapest_path_from hd'
+          in if m.(x1).(y1) < m.(x2).(y2) then (x1,y1) else (x2,y2)
+        in
+        m.(x).(y) :: cheapest_path
+     | hd :: tl -> m.(x).(y) :: cheapest_path_from hd
+   in
+   cheapest_path_from (0,0);;
+
 let matrix = read_matrix "test-matrix.txt";;
+
+let _ = solve matrix;;
 
 let expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331; 999 ];;
 
