@@ -138,29 +138,30 @@ let path m =
  if max_y < min_y (* || max_x < min_x *)
  then
    (* An empty matrix.  No problem, so no solution. *)
-   []
+   (0, [])
  else
-   let right (x, y) = (x+1, y) and down (x, y) = (x, y+1)
-       and in_bounds (x, y) = if x <= max_x && y <= max_y then true else false
+   let right (x, y) = (x+1, y)
+   and down (x, y) = (x, y+1)
+   and in_bounds (x, y) = x <= max_x && y <= max_y
+   (* and cost path =
+    *   List.fold_left ~f:(+) ~init:0
+    *     (List.map ~f:(fun (x,y) -> m.(x).(y)) path) *)
    in
-   let next_hops (x, y) = List.filter ~f:in_bounds [right(x,y); down(x,y)]
+   let next_hops (x, y) =
+     List.filter ~f:in_bounds [right(x,y); down(x,y)]
    in
    let rec cheapest_path_from (x, y) =
-     match next_hops (x, y) with
-       [] -> m.(x).(y)  (* { cost = m.(x).(y); hop = (x, y) } *)
-     | hd :: hd' :: tl ->
-        let cheapest_path = 
-          let (x1,y1)::tl1 = cheapest_path_from hd and (x2,y2) = cheapest_path_from hd'
-          in if m.(x1).(y1) < m.(x2).(y2) then (x1,y1) else (x2,y2)
-        in
-        m.(x).(y) :: cheapest_path
-     | hd :: tl -> m.(x).(y) :: cheapest_path_from hd
+     if x = max_x && y = max_y
+     then (m.(x).(y), [(x,y)])
+     else
+       match next_hops (x, y) with
+         [] -> (m.(x).(y), [(x,y)])
+       | hd :: _ -> let (cost, path) = cheapest_path_from hd
+                    in (m.(x).(y) + cost, (x,y) :: path)
    in
    cheapest_path_from (0,0);;
 
 let matrix = read_matrix "test-matrix.txt";;
-
-let _ = solve matrix;;
 
 let expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331; 999 ];;
 
@@ -170,5 +171,12 @@ let expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331; 999 ];;
  * 537,699,497,121,956
  * 805,732,524,37,331 *)
 
+let _ = path matrix;;
+
 let _ = test_solver (solve) matrix expected_output;;
 
+let _ = List.fold_left ~f:(+) ~init:0 [131;673;234;103;18;150;111;956;331];;
+
+let _ = List.fold_left ~f:(+) ~init:0 [131;201;630;537;805;732;524;37;331];;
+
+let _ = List.fold_left ~f:(+) ~init:0 [131;201;630;537;805;732;524;37];;
