@@ -143,9 +143,9 @@ let path m =
    let right (x, y) = (x+1, y)
    and down (x, y) = (x, y+1)
    and in_bounds (x, y) = x <= max_x && y <= max_y
-   (* and cost path =
-    *   List.fold_left ~f:(+) ~init:0
-    *     (List.map ~f:(fun (x,y) -> m.(x).(y)) path) *)
+   and cost path =
+     List.fold_left ~f:(+) ~init:0
+       (List.map ~f:(fun (x,y) -> m.(x).(y)) path)
    in
    let next_hops (x, y) =
      List.filter ~f:in_bounds [right(x,y); down(x,y)]
@@ -155,15 +155,30 @@ let path m =
      then (m.(x).(y), [(x,y)])
      else
        match next_hops (x, y) with
-         [] -> (m.(x).(y), [(x,y)])
+         [] -> (m.(x).(y), [(x,y)])  (* If objective not reached this
+                                        is an error condition.  Raise
+                                        exception? *)
+       | hd :: hd' :: _ -> let (cost1, path1) = cheapest_path_from hd
+                           and (cost2, path2) = cheapest_path_from hd'
+                           in
+                           let (cost, path) =
+                             if cost1 < cost2
+                             then (cost1, path1)
+                             else (cost2, path2)
+                           in (m.(x).(y) + cost, (x,y) :: path)
        | hd :: _ -> let (cost, path) = cheapest_path_from hd
                     in (m.(x).(y) + cost, (x,y) :: path)
    in
-   cheapest_path_from (0,0);;
+   cheapest_path_from (0, 0);;
+   (* let (lol,rofl) = cheapest_path_from (0, 0) in (9,[]);; *)
+   (* let (_, path) = cheapest_path_from (0,0)
+    * in path;; *)
+   (* let (_, path) = cheapest_path_from (0,0)
+    * in List.map ~f:(fun (x,y) -> m.(x).(y)) path;; *)
 
 let matrix = read_matrix "test-matrix.txt";;
 
-let expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331; 999 ];;
+let expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331; ];;
 
 (* 131,673,234,103,18
  * 201,96,342,965,150
@@ -171,12 +186,19 @@ let expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331; 999 ];;
  * 537,699,497,121,956
  * 805,732,524,37,331 *)
 
-let _ = path matrix;;
+let hmm = path matrix;;
 
-let _ = test_solver (solve) matrix expected_output;;
+let path_vals matrix path =
+    List.map ~f:(fun (a',b') -> matrix.(a').(b')) path;;
+
+let path_vals_only matrix (cost, path) = path_vals matrix path;;
+
+let _ = test_solver (path) matrix expected_output;;
 
 let _ = List.fold_left ~f:(+) ~init:0 [131;673;234;103;18;150;111;956;331];;
 
 let _ = List.fold_left ~f:(+) ~init:0 [131;201;630;537;805;732;524;37;331];;
 
 let _ = List.fold_left ~f:(+) ~init:0 [131;201;630;537;805;732;524;37];;
+
+let _ = List.fold_left ~f:(+) ~init:0 expected_output;;
