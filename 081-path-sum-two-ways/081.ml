@@ -18,21 +18,36 @@
 open Core;;
 open Base;;
 
-type area = { x:int; y: int }
+type dimensions = { rows:int; cols:int }
+
+let List.fold_left ~f:(fun l -> match l with [] -> [] | hd::tl -> ) ~init:[] [1;2;3;4;4;5;5;5;5;6]
+let _ = "";;
+
+let f xs x =
+  x :: match xs with
+         [] -> []
+       | hd :: tl -> if x = hd then tl else xs;;
+
+let _ = List.fold_left ~f:f ~init:[] [1;2;3;3;3;4;5];;
+
+let rec f = function | [] -> 1 | hd :: tl -> 1 + f tl;;
+let rec g = function   [] -> 1 | hd :: tl -> 1 + g tl;;
 
 (* This is a kinda heavyweight way of determining matrix dimensions *)
 let dimensions_file file =
   let lines = In_channel.read_lines file
   in
-  let rec aux prev_x lines' =
+  let uniq 
+  let rec aux lines' =
+    List.map (fun s -> List.length (Base.String.split ~on:',' s)) lines'
     match lines' with
-      [] -> prev_x
+      [] -> prev_row_len
     | hd :: tl ->
        let n = List.length (Base.String.split ~on:',' hd)
-       in if prev_x = -1 || prev_x = n
+       in if prev_row_len = -1 || prev_row_len = n
           then aux n tl
           else -2  (* Should probably raise an exception here *)
-  in { x = (aux (-1) lines); y = (List.length lines) };;
+  in { rows = (aux (-1) lines); cols = (List.length lines) };;
 
 let dimensions_matrix matrix =
   let len = Array.length matrix
@@ -174,7 +189,9 @@ let path m =
    (* in List.map ~f:(fun (x,y) -> m.(x).(y)) (path);; *)
    in cost;;
 
-let matrix = read_matrix "test-matrix.txt";;
+
+let matrix = read_matrix "test-matrix.txt"
+    in
 
 let expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331; ];;
 
