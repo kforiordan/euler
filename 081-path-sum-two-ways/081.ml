@@ -170,7 +170,9 @@ let test_solver solver matrix expected =
 let path_vals matrix path =
     List.map ~f:(fun (a',b') -> matrix.(a').(b')) path;;
 
-let matrix = read_matrix "test-matrix.txt"
+let matrix_file = "p081_matrix.txt";;
+
+let matrix = read_matrix matrix_file
 and expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331; ]
     in
     test_solver (fun m -> path_vals m (solve m)) matrix expected_output;;
@@ -179,3 +181,8 @@ let a = !cheapest_path_from_count
 and b = !expensive_lookup_count
 and c = !cheap_lookup_hit
 and d = !cheap_lookup_miss;;
+
+let minimal_path_sum =
+  let matrix = read_matrix matrix_file in
+  List.fold_left ~f:(+) ~init:0
+    (path_vals matrix (solve matrix));;
