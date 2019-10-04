@@ -135,7 +135,13 @@ let solve m =
       let response = cheap_lookup (x, y)
       in
       match response with
-        None -> let _ = Int.incr cheap_lookup_miss in expensive_lookup (x, y)
+        None -> let _ = Int.incr cheap_lookup_miss in
+                let result = expensive_lookup (x, y) in
+                let key = (Int.to_string x) ^ "-" ^ (Int.to_string y)
+                in
+                let _ = Hashtbl.set path_cost_tbl ~key:key ~data:result
+                in
+                result
       | Some result -> let _ = Int.incr cheap_lookup_hit in result
     in
     let (cost, path) = cheapest_path_from (0, 0)
