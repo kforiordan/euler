@@ -76,7 +76,10 @@ let read_matrix file =
   matrix;;
 
 
+let cheapest_path_from_count = ref 0;;
+
 let solve m =
+  let _ = cheapest_path_from_count := 0 in
   let (min_x, min_y) = (0, 0)
   and (max_x, max_y) = let d = dimensions_matrix m in ((d.rows - 1), (d.cols - 1))
   in
@@ -94,6 +97,7 @@ let solve m =
     let next_hops (x, y) = List.filter ~f:in_bounds [right(x,y); down(x,y)]
     in
     let rec cheapest_path_from (x, y) =
+      let _ = cheapest_path_from_count := (!cheapest_path_from_count + 1) in
       if x = max_x && y = max_y
       then (m.(x).(y), [(x,y)])
       else
@@ -142,3 +146,5 @@ let matrix = read_matrix "test-matrix.txt"
 and expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331; ]
     in
     test_solver (fun m -> path_vals m (solve m)) matrix expected_output;;
+
+let _ = !cheapest_path_from_count;;
