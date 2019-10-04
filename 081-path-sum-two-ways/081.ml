@@ -169,12 +169,10 @@ let path m =
        | hd :: _ -> let (cost, path) = cheapest_path_from hd
                     in (m.(x).(y) + cost, (x,y) :: path)
    in
-   cheapest_path_from (0, 0);;
-   (* let (lol,rofl) = cheapest_path_from (0, 0) in (9,[]);; *)
-   (* let (_, path) = cheapest_path_from (0,0)
-    * in path;; *)
-   (* let (_, path) = cheapest_path_from (0,0)
-    * in List.map ~f:(fun (x,y) -> m.(x).(y)) path;; *)
+   let (cost, path) = cheapest_path_from (0, 0)
+   (* in (cost, List.map ~f:(fun (x,y) -> m.(x).(y)) path);; *)
+   (* in List.map ~f:(fun (x,y) -> m.(x).(y)) (path);; *)
+   in cost;;
 
 let matrix = read_matrix "test-matrix.txt";;
 
