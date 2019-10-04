@@ -77,11 +77,20 @@ let read_matrix file =
 
 
 let cheapest_path_from_count = ref 0;;
+let expensive_lookup_count = ref 0;;
+let cheap_lookup_hit = ref 0;;
+let cheap_lookup_miss = ref 0;;
 
 let solve m =
-  let _ = cheapest_path_from_count := 0 in
+  let _ = cheapest_path_from_count := 0
+  and _ = expensive_lookup_count := 0
+  and _ = cheap_lookup_hit := 0
+  and _ = cheap_lookup_miss := 0
+  in
   let (min_x, min_y) = (0, 0)
   and (max_x, max_y) = let d = dimensions_matrix m in ((d.rows - 1), (d.cols - 1))
+  in
+  let path_cost_tbl = Hashtbl.create ~size:((max_x + 1) * (max_y + 1)) (module String)
   in
   if max_y < min_y (* || max_x < min_x *)
   then
@@ -97,24 +106,37 @@ let solve m =
     let next_hops (x, y) = List.filter ~f:in_bounds [right(x,y); down(x,y)]
     in
     let rec cheapest_path_from (x, y) =
-      let _ = cheapest_path_from_count := (!cheapest_path_from_count + 1) in
-      if x = max_x && y = max_y
-      then (m.(x).(y), [(x,y)])
-      else
-        match next_hops (x, y) with
-          [] -> (m.(x).(y), [(x,y)])  (* If objective not reached this
+      let _ = Int.incr cheapest_path_from_count in
+      let rec expensive_lookup (x, y) =
+        let _ = Int.incr expensive_lookup_count in
+        if x = max_x && y = max_y
+        then (m.(x).(y), [(x,y)])
+        else
+          match next_hops (x, y) with
+            [] -> (m.(x).(y), [(x,y)])  (* If objective not reached this
                                         is an error condition.  Raise
                                         exception? *)
-        | hd :: hd' :: _ -> let (cost1, path1) = cheapest_path_from hd
-                            and (cost2, path2) = cheapest_path_from hd'
-                            in
-                            let (cost, path) =
-                              if cost1 < cost2
-                              then (cost1, path1)
-                              else (cost2, path2)
-                            in (m.(x).(y) + cost, (x,y) :: path)
-        | hd :: _ -> let (cost, path) = cheapest_path_from hd
-                     in (m.(x).(y) + cost, (x,y) :: path)
+          | hd :: hd' :: _ -> let (cost1, path1) = cheapest_path_from hd
+                              and (cost2, path2) = cheapest_path_from hd'
+                              in
+                              let (cost, path) =
+                                if cost1 < cost2
+                                then (cost1, path1)
+                                else (cost2, path2)
+                              in (m.(x).(y) + cost, (x,y) :: path)
+          | hd :: _ -> let (cost, path) = cheapest_path_from hd
+                       in (m.(x).(y) + cost, (x,y) :: path)
+      in
+      let cheap_lookup (x, y) =
+        let key = (Int.to_string x) ^ "-" ^ (Int.to_string y)
+        in
+        Hashtbl.find path_cost_tbl key
+      in
+      let response = cheap_lookup (x, y)
+      in
+      match response with
+        None -> let _ = Int.incr cheap_lookup_miss in expensive_lookup (x, y)
+      | Some result -> let _ = Int.incr cheap_lookup_hit in result
     in
     let (cost, path) = cheapest_path_from (0, 0)
     in
@@ -147,4 +169,7 @@ and expected_output = [ 131; 201; 96; 342; 746; 422; 121; 37; 331; ]
     in
     test_solver (fun m -> path_vals m (solve m)) matrix expected_output;;
 
-let _ = !cheapest_path_from_count;;
+let a = !cheapest_path_from_count
+and b = !expensive_lookup_count
+and c = !cheap_lookup_hit
+and d = !cheap_lookup_miss;;
