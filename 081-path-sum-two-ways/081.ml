@@ -56,6 +56,26 @@ let dimensions_matrix matrix =
      else { rows = len; cols = Array.length (matrix.(0)) };;
 
 
+(* Given a string of comma-separated numbers, returns an array of
+   those numbers.  This is a vector of points with the same y value,
+   indexed by x value. *)
+let array_of_line line = Array.of_list
+                           (List.map ~f:Int.of_string
+                              (Base.String.split ~on:',' line));;
+
+
+(* Reads from file, returns matrix.  Checks dimensions first, then
+   ignores that check.  Passes over the input file twice. *)
+let read_matrix file =
+  let dimensions' = dimensions_file file in
+  let matrix = Array.create ~len:dimensions'.rows [||] in
+  let lines = In_channel.read_lines file in
+  let add_to_matrix i line = matrix.(i) <- array_of_line line in
+  let _ = List.mapi ~f:add_to_matrix lines
+  in
+  matrix;;
+
+
 let solve m =
   let (min_x, min_y) = (0, 0)
   and (max_x, max_y) = let d = dimensions_matrix m in ((d.rows - 1), (d.cols - 1))
