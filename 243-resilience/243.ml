@@ -37,30 +37,11 @@ let resilience denominator =
           if is_coprime i denominator
           then aux (i+1) (i :: acc)
           else aux (i+1) acc
-      in aux 1
+      in aux min_numerator []
     in
     ( List.length(resilient_numerators), max_numerator);;
 
-
-let _ = resilience 12;;
-
-
-(* Weird syntax thing - why is the second, and subsequent, 'then'
-   clauses accepted?
-
- * let f x =
- *   if x = 1
- *   then ()
- *   then ();;
- *
- *   # let f x =
- *     if x = 1
- *     then ();;
- *   val f : int -> unit = <fun> 
- *)
-
-let f x =
-  if x = 1
-  then ()
-then ()
-then ();;
+let resilience_quotient denominator =
+  let (n, d) = resilience denominator in
+  if d = 0 then 0. else
+    (float_of_int n) /. (float_of_int d);;
