@@ -11,6 +11,10 @@
 
    Find the smallest denominator d, having a resilience R(d) < 15499/94744 . *)
 
+(* Haskell has these built in. *)
+let product = List.fold_left ~f:( * ) ~init:1;;
+let sum = List.fold_left ~f:( + ) ~init:0;;
+
 let rec euclid_gcd n m = if n < m
                          then euclid_gcd m n
                          else
@@ -21,7 +25,7 @@ let rec euclid_gcd n m = if n < m
 
 let is_coprime n m = if euclid_gcd n m = 1 then true else false;;
 
-let resilience denominator =
+let resilience_computational denominator =
   if denominator < 1
   then
     (0, 0)
@@ -41,8 +45,8 @@ let resilience denominator =
     in
     ( List.length(resilient_numerators), max_numerator);;
 
-let resilience_quotient denominator =
-  let (n, d) = resilience denominator in
+let resilience_quotient f denominator =
+  let (n, d) = f denominator in
   if d = 0 then 0. else
     (float_of_int n) /. (float_of_int d);;
 
@@ -72,7 +76,7 @@ let next_prime n =
 
 let solve_computationally target =
   let rec aux factors =
-    let candidate = List.fold_left ~f:( * ) ~init:1 factors in
+    let candidate = product factors in
     let _ = print_string ((string_of_int candidate) ^ "\n") in
     let r = resilience_quotient candidate
     in
@@ -112,40 +116,61 @@ let target_resilience = 1.0 *. (15499. /. 94744.);;
    33.3%) of its proper fractions non-resilient.  Add 5 as a factor
    and we're at 50% + (50% of 33.3%) + (50% of 33.3% of 20%) ... and
    so on.  I'm guessing the product of the first 9 or 10 primes is the
-   solution. *)
+   solution.
+*)
 
-let resilience_quotient_factors factors =
-  let things =
-    let rec aux porosity' factors' =
-      match factors' with
-        [] -> []
-      | hd :: tl -> (List.fold_left ~f:( * ) ~init:1 factors') :: (aux tl)
-    in aux factors
+(* It's not the product of the first n primes anyway.  The product of
+   2;3;5;7;11;13;17;19;23 has a resilience quotient of
+   16358819608886738, which is 1.0000000032417349 times the threshold.
+   So I'm close, much closer than yesterday's 1.025, but not quite
+   there.  Adding another factor, 29, brings the resilience to
+   0.965517 times the target, so I guess there's some number between
+   those two prime products that is just slightly under the target,
+   but I can't see how to find it mathematically, and I don't think it
+   can be brute forced, at least not the way I'm doing it.  *)
+
+let resilience_factors factors =
+  let max_numerator = (product factors) - 1 in
+  let rec aux factors' remaining multiples =
+    match factors' with
+      [] -> 0
+    | hd :: tl -> let multiples' = remaining / hd
+                  in
+                  let remainder = remaining - multiples'
+                  in
+                  multiples' + aux tl remainder (multiples + multiples')
   in
-  things;;
-  List.map ~f:(fun x -> 1. /. (float_of_int x)) things;;
+  (max_numerator - (aux factors max_numerator 0), max_numerator);;
 
-let _ = resilience_quotient_factors [5;3;2];;
+let _ = 
+  let factors = [2;3;5;7;11;13;17;19;23;29] in
+  resilience_quotient (resilience_factors) factors;;
 
-  let porosity =
-    let aux factors' =
-      match factors' with
-        [] -> 0.
-      | hd :: tl ->
-         1. /. (float_of_int (List.fold_left ~f:( * ) ~init:1 factors')
-
+let topn =
+  List.take 
+    (let cmp = fun (d,q) (d',q') -> if q < q' then -1
+                                    else if q > q' then 1
+                                    else 0
+     in
+     (List.sort ~compare:cmp
+        (List.map ~f:(fun x -> (x, f x))
+           (List.range 1 5000)))) 30;;
 
 let solve_mathematically target =
   let rec aux factors =
-    if resilience_quotient_factors factors < target
-    then List.fold_left ~f:( * ) ~init:1 factors
+    if (resilience_quotient (resilience_factors) factors) < target
+    then product factors
     else
       match factors with
         [] -> aux [2]
-      | hd :: _ -> aux (next_prime hd :: factors)
-  in aux [];;
+      | hd :: _ -> ( print_string ((Int.to_string hd) ^ "\n");
+                     aux (next_prime hd :: factors) )
+  in aux [2];;
 
 let solve = solve_mathematically;;
+
+let _ = target_resilience;;
+let _ = solve target_resilience;;
 
 
 (* Some exploratory stuff I should've done at the outset: *)
