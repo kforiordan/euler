@@ -19,3 +19,41 @@
 
    NOTE: Once the chain starts the terms are allowed to go above one
    million.  *)
+
+let collatz n =
+  let rec aux acc =
+    match acc with
+      [] -> acc
+    | hd :: tl -> if hd = 1
+                  then acc
+                  else
+                    if hd mod 2 = 0
+                    then aux ((hd / 2) :: acc)
+                    else aux (((3 * hd) + 1) :: acc)
+  in
+  List.rev (aux [n]);;
+
+(* Because we only care about sequence length, here's a cheaper
+   version of the collatz function that does not keep track of the
+   sequence as it generates it. *)
+let cheap_collatz n =
+  let rec aux prev len =
+    if prev = 1
+    then len
+    else
+      if prev mod 2 = 0
+      then aux (prev / 2) (len + 1)
+      else aux ((3 * prev) + 1) (len + 1)
+  in
+  aux n 1;;
+
+let solve n =
+  let rec aux i longest_starter longest_length =
+    if i > n
+    then longest_starter
+    else
+      let length = cheap_collatz i in
+      if length > longest_length
+      then aux (i+1) (i) length
+      else aux (i+1) longest_starter longest_length
+  in aux 1 1 1;;
