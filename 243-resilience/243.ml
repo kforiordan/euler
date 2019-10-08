@@ -78,7 +78,7 @@ let solve_computationally target =
   let rec aux factors =
     let candidate = product factors in
     let _ = print_string ((string_of_int candidate) ^ "\n") in
-    let r = resilience_quotient candidate
+    let r = resilience_quotient (resilience_computational) candidate
     in
     if r < target
     then
@@ -142,19 +142,34 @@ let resilience_factors factors =
   in
   (max_numerator - (aux factors max_numerator 0), max_numerator);;
 
-let _ = 
+let _ =
   let factors = [2;3;5;7;11;13;17;19;23;29] in
   resilience_quotient (resilience_factors) factors;;
 
+let _ = product [2;3;5;7;11;13;17;19;23;2;3];;
+
+let hmm =
+  let o = [[2;3;5;7;11;13;17;19;23];
+           [2;3;5;7;11;13;17;19;23;2];
+           [2;3;5;7;11;13;17;19;23;2;2];
+           [2;3;5;7;11;13;17;19;23;2;3]]
+  in
+  let f p = resilience_quotient (resilience_computational) (product p) in
+  List.map ~f:f o;;
+
+let f = resilience_quotient (resilience_computational);;
+
+f 81;;
+
 let topn =
-  List.take 
+  List.take
     (let cmp = fun (d,q) (d',q') -> if q < q' then -1
                                     else if q > q' then 1
                                     else 0
      in
      (List.sort ~compare:cmp
         (List.map ~f:(fun x -> (x, f x))
-           (List.range 1 5000)))) 30;;
+           (List.range 1 10000)))) 30;;
 
 let solve_mathematically target =
   let rec aux factors =
@@ -193,3 +208,10 @@ let _ = euclid_gcd 15499 94744;;
 
 (* Result: 15499 and 94744 are coprime.  I can't see a reason why
    these particular numbers were chosen. *)
+
+
+(* The solution is the product of [2;2;2;3;5;7;11;13;17;19;23].  I
+   found this by trial and error.  Looking in the forum, I see the
+   real math answers involve totients, whatever they are, so I think I
+   should do a few totient-related problems. *)
+
