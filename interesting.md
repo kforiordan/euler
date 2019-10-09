@@ -20,7 +20,6 @@
 
 ## As Easy as Pi
 
-* 14
 * 15
 * 32
 * 35
@@ -45,5 +44,3 @@
 
 * 241
 
-# euler
-Project Euler puzzles
