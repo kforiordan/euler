@@ -47,6 +47,7 @@ let cheap_collatz n =
   in
   aux n 1;;
 
+(* Solver that uses the cheap_collatz function, which is bullshit. *)
 let solve n =
   let rec aux i longest_starter longest_length =
     if i > n
@@ -57,3 +58,13 @@ let solve n =
       then aux (i+1) (i) length
       else aux (i+1) longest_starter longest_length
   in aux 1 1 1;;
+
+(* This solver works too, and it's the one I should have gone for. *)
+let solve n =
+  let longer (i, l, s) (i', l', s') = if l' > l then (i', l', s') else (i, l, s)
+  in
+  List.fold_left ~f:longer ~init:(0, 0, [])
+    (List.map ~f:(fun x -> let s = collatz x in (x, (List.length s), s))
+       (List.range 1 n));;
+
+let solution = solve 1000000;;
