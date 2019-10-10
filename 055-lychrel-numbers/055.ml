@@ -28,3 +28,21 @@ How many Lychrel numbers are there below ten-thousand?
 NOTE: Wording was modified slightly on 24 April 2007 to emphasise the
 theoretical nature of Lychrel numbers.
 *)
+
+let digits n =
+  let rec aux n' digits =
+    if n' = 0 then digits
+    else
+      let n'' = n' / 10 and r = n' mod 10
+      in aux n'' (r :: digits)
+  in aux n [];;
+
+let combine digits =
+  let rec aux digits power =
+    match digits with
+      [] -> 0
+    | x :: xs -> (x * int_of_float (10. ** (float_of_int power))) +
+                   aux xs (power+1)
+  in aux (List.rev digits) 0;;
+
+let is_palindrome a b = a = combine (List.rev (digits b));;
