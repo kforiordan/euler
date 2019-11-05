@@ -1,6 +1,17 @@
-# Award Chasing
+# Things I Should Know About
 
-# Totients
+## I Can't Remember Why
+
+* 51
+* 54
+* 60
+* 61
+* 62
+* 66
+* 68
+* 69
+
+## Totients
 
 * 69
 * 70
@@ -10,6 +21,8 @@
 * 342
 * 432
 * 516
+
+# Award Chasing
 
 ## Fibonacci Fever
 
