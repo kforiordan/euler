@@ -1,5 +1,5 @@
 
-(* Courtesy of dhart *)
+(* Courtesy of dhart -- wait a minute, that's Gauss's formula! *)
 let triangle n = ((n * n) + n) / 2;;
 
 let int_sqrt n = (int_of_float (sqrt (float_of_int)));;
