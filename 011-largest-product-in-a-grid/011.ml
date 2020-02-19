@@ -3,13 +3,18 @@
    or diagonally) in the 20×20 grid?
 *)
 
-(* Large parts of this have been borrowed from 081. *)
+(* Large parts of this have been borrowed from 081.  My solution is
+   verbose and ugly, and at the end of the day it's just a brute force
+   approach - and I don't think there's any better way.
+
+   What I do have is I read the data from a file, and the number of
+   adjacent numbers is a parameter.  So if this comes up again, I'm
+   sorted. *)
 
 open Core;;
 open Base;;
 
 type dimensions = { rows:int; cols:int }
-
 
 
 
@@ -66,8 +71,116 @@ let read_matrix file =
   matrix;;
 
 
-let solve file n =
-  let m = read_matrix file
-  in (m.(0).(0), n);;
+let n_right matrix (row, col) n =
+  let dims = dimensions_matrix matrix in
+  if (col + n) > dims.cols
+  then
+    []
+  else
+    let rec aux i =
+      if i < n
+      then
+        let col' = col+i in
+        ((row, col'), matrix.(row).(col')) :: aux (i+1)
+      else
+        []
+    in aux 0;;
 
-let _ = solve "grid.csv" 4;;
+let n_down matrix (row, col) n =
+  let dims = dimensions_matrix matrix in
+  if (row + n) > dims.rows
+  then
+    []
+  else
+    let rec aux i =
+      if i < n
+      then
+        let row' = row+i in
+        ((row', col), matrix.(row').(col)) :: aux (i+1)
+      else
+        []
+    in aux 0;;
+
+let n_diag_down_right matrix (row, col) n =
+  let dims = dimensions_matrix matrix in
+  if (row + n) > dims.rows || (col + n) > dims.cols
+  then
+    []
+  else
+    let rec aux i =
+      if i < n
+      then
+        let row' = row+i in
+        let col' = col+i in
+        ((row', col'), matrix.(row').(col')) :: aux (i+1)
+      else
+        []
+    in aux 0;;
+
+
+let n_diag_down_left matrix (row, col) n =
+  let dims = dimensions_matrix matrix in
+  if (row + n) < dims.rows && (col - n) >= 0
+  then
+    let rec aux i =
+      if i < n
+      then
+        let row' = row+i in
+        let col' = col-i in
+        ((row', col'), matrix.(row').(col')) :: aux (i+1)
+      else
+        []
+    in aux 0
+  else
+    [];;
+
+let _ = n_right (read_matrix "grid.csv") (1,1) 4;;
+let _ = n_diag_down_left (read_matrix "grid.csv") (1,1) 4;;
+let _ = n_diag_down_left (read_matrix "grid.csv") (1,2) 4;;
+let _ = n_diag_down_left (read_matrix "grid.csv") (1,3) 4;;
+let _ = n_diag_down_left (read_matrix "grid.csv") (1,4) 4;;
+let _ = n_diag_down_left (read_matrix "grid.csv") (1,5) 4;;
+
+let n_diag = n_diag_down_right;;
+let n_diag' = n_diag_down_left;;
+
+(* We should handle the case where the cell list is junk ... *)
+let prod_cells cells =
+  List.fold_left ~init:1 ~f:(fun b ((r,c),v) -> b * v) cells;;
+
+
+let _ = n_right (read_matrix "grid.csv") (0,0) 4;;
+let _ = prod_cells (n_right (read_matrix "grid.csv") (0,0) 4);;
+let _ = n_right (read_matrix "grid.csv") (0,16) 4;;
+let _ = n_right (read_matrix "grid.csv") (0,17) 4;;
+
+let solve file n =
+  let matrix = read_matrix file in
+  let dims = dimensions_matrix matrix in
+  let prods =
+    let rec vary_rows row =
+      let rec vary_cols col =
+        if dims.cols > col
+        then
+          let adjacent_right = n_right matrix (row, col) n in
+          let adjacent_down = n_down matrix (row, col) n in
+          let adjacent_diag = n_diag matrix (row, col) n in
+          let adjacent_diag' = n_diag' matrix (row, col) n in
+          let prod_right = prod_cells adjacent_right in
+          let prod_down = prod_cells adjacent_down in
+          let prod_diag = prod_cells adjacent_diag in
+          let prod_diag' = prod_cells adjacent_diag' in
+          prod_right :: prod_down :: prod_diag :: prod_diag' :: vary_cols (col+1)
+        else
+          []
+      in
+      if dims.rows > row
+      then
+        vary_cols 0 @ vary_rows (row+1)
+      else
+        []
+    in vary_rows 0
+  in List.sort ~compare:(fun a b -> if a < b then 1 else -1) prods;;
+
+let _ = List.hd (solve "small.csv" 4);;
+let _ = List.hd (solve "grid.csv" 4);;
