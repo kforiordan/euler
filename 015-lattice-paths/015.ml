@@ -92,3 +92,10 @@ let mult = List.fold_left ~init:1 ~f:(fun a b -> a * b);;
 let _ = mult [23;29;31;33;35;37;39;2];;
 
 (* No, that's wrong too. *)
+
+(* Ok, more careful about the math: *)
+let _ = mult [23;29;31;37; 4;9; 5;7;11;13];;
+
+(* You are the 177812th person to have solved this problem.
+
+   This problem had a difficulty rating of 5% *)
