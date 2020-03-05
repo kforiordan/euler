@@ -30,23 +30,33 @@ let list_from_file filename =
   List.fold_left ~f:(@) ~init:[]
     (List.map ~f:list_from_line lines);;
 
-let triangle = tree_from_file "triangle-small.txt"
-
 type 'a bt =
   | Empty
   | Node of 'a bt * 'a * 'a bt
 
-(* bfs is actually harder than it sounds.
-
-let rec add_to_tree tree n =
+let rec insert_df (tree:'a bt) n =
   match tree with
     Empty -> Node (Empty, n, Empty)
-  | Node (Empty, n', right) -> Node ((add_to_tree Empty n), n', Empty)
-  | Node (left, n', Empty) -> Node (left, n', (add_to_tree Empty n))
-  | Node (left, n', right) -> Node (add_to_tree
+  | Node (Empty, n', Empty) ->
+     Node ((insert_df Empty n), n', Empty)
+  | Node (Empty, n', right) ->
+     Node ((insert_df Empty n), n', right)
+  | Node (left, n', Empty) ->
+     Node (left, n', insert_df Empty n)
+  | Node (left, n', right) ->
+     Node ((insert_df left n), n', right);;
 
-let tree_from_list tree list =
-  match list with
-    [] -> tree
-  | hd :: tl -> add_to_tree hd 
-*)
+let rec insert_bf (tree:'a bt) n =
+  Empty;;
+
+let list_to_tree f l =
+  let rec aux tree l' =
+    match l' with
+      [] -> tree
+    | hd :: tl ->
+       let tree' = f tree hd in
+       aux tree' tl
+  in aux Empty l;;
+
+let list_to_tree_df = list_to_tree (insert_df);;
+let list_to_tree_bf = list_to_tree (insert_bf);;
