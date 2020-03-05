@@ -48,6 +48,18 @@ let rec insert_df (tree:'a bt) n =
 let rec insert_bf (tree:'a bt) n =
   Empty;;
 
+(* O(1) enqueue *)
+let enqueue q e = e :: q;;
+
+(* O(n) dequeue, lol. *)
+let rec dequeue q =
+  let rec aux q q' =
+    match q with
+      [] -> (None, [])
+    | hd :: [] -> (Some hd, List.rev q')
+    | hd :: tl -> aux tl (hd :: q')
+  in aux q [];;
+
 (* Reads a triangle from a given file; returns a list of values. *)
 let list_from_file filename =
   let list_from_line line = Base.String.split ~on:' ' line in
