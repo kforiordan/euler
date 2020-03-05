@@ -18,36 +18,43 @@
    and requires a clever method! ;o)
 *)
 
+(* Representing this triangle as a binary tree seems natural, so
+   before we solve the actual problem we have to read the triangle
+   from a file, and insert the values into a tree.  We need to insert
+   values in the order they appear, so the insert operation should not
+   attempt to balance the tree.  The tree should be filled
+   breadth-first - so we need a queue to track insertion order - and
+   honestly I can't think how to do that without using pointers (or
+   references).
+*)
+
 #require "core.top";;
 open Core;;
 
-let list_from_line line =
-  Base.String.split ~on:' ' line;;
-
-let list_from_file filename =
-  let lines = In_channel.read_lines filename
-  in
-  List.fold_left ~f:(@) ~init:[]
-    (List.map ~f:list_from_line lines);;
-
+(* Here's our simple tree data type. *)
 type 'a bt =
   | Empty
   | Node of 'a bt * 'a * 'a bt
 
+(* Depth-first insert, for comparison. *)
 let rec insert_df (tree:'a bt) n =
   match tree with
     Empty -> Node (Empty, n, Empty)
-  | Node (Empty, n', Empty) ->
-     Node ((insert_df Empty n), n', Empty)
-  | Node (Empty, n', right) ->
-     Node ((insert_df Empty n), n', right)
-  | Node (left, n', Empty) ->
-     Node (left, n', insert_df Empty n)
-  | Node (left, n', right) ->
-     Node ((insert_df left n), n', right);;
+  | Node (Empty, n', Empty) -> Node ((insert_df Empty n), n', Empty)
+  | Node (Empty, n', right) -> Node ((insert_df Empty n), n', right)
+  | Node (left, n', Empty) -> Node (left, n', insert_df Empty n)
+  | Node (left, n', right) -> Node ((insert_df left n), n', right);;
 
 let rec insert_bf (tree:'a bt) n =
   Empty;;
+
+(* Reads a triangle from a given file; returns a list of values. *)
+let list_from_file filename =
+  let list_from_line line = Base.String.split ~on:' ' line in
+  let lines = In_channel.read_lines filename
+  in
+  List.fold_left ~f:(@) ~init:[]
+    (List.map ~f:list_from_line lines);;
 
 let list_to_tree f l =
   let rec aux tree l' =
