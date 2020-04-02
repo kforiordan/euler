@@ -54,21 +54,35 @@ module Numath = struct
      f(x)=sin(x). ... We have neither shown the output ... nor
      explained the purpose ... We invite the reader to discover this ..."
 
-     Well fuck.
+     It converges on cos(x).
   *)
-  let first n =
-    let x = 0.5 in
+  let first_imperative x n = (
+      let h = ref 1.0 in
+      let y = ref 0.0 in
+      for i = 1 to n do
+        h := 0.25 *. !h;
+        y := (sin(x +. !h) -. sin(x)) /. !h;
+        let error = abs_float ((cos x) -. !y) in
+        Printf.printf "%i,%f,%f,%f\n" i !h !y error
+      done;
+      !y
+    )
+
+  let first_functional x n =
     let h = 1.0 in
     let i = 1 in
     let rec aux i' h' =
-      if i' > n
-      then []
+      if i' > n then []
       else
         let h'' = 0.25 *. h' in
         let y = (sin (x +. h'') -. sin x) /. h'' in
         let error = abs_float ((cos x) -. y) in
         (i', h'', y, error) :: (aux (i' + 1) h'')
     in aux i h
+
+  let first = first_functional
 end
 
-let _ = Numath.first 10;;
+let _ = Numath.first 0.5 10;;
+
+let _ = Numath.first_imperative 0.5 10;;
