@@ -15,6 +15,7 @@ x = 0.5
 h = 1.0
 
 # Why is range half open?  I say 11 to mean 10, bah.
+print("{},{},{},{}".format("i","h","y","error"))
 for i in range(1, 11):
     h = 0.25 * h
     y = (sin(x+h) - sin(x))/h
