@@ -68,6 +68,19 @@ module Numath = struct
       !y
     )
 
+  let first_imperative' x n = (
+      let h = ref 1.0 in
+      let y = ref 0.0 in
+      let l = ref [] in
+      for i = 1 to n do
+        h := 0.25 *. !h;
+        y := (sin(x +. !h) -. sin(x)) /. !h;
+        let error = abs_float ((cos x) -. !y) in
+        l := (i,!h,!y,error) :: !l
+      done;
+      List.rev !l
+    )
+
   let first_functional x n =
     let h = 1.0 in
     let i = 1 in
@@ -85,4 +98,6 @@ end
 
 let _ = Numath.first 0.5 10;;
 
+let _ = Numath.first_functional 0.5 10;;
 let _ = Numath.first_imperative 0.5 10;;
+let _ = Numath.first_imperative' 0.5 10;;
