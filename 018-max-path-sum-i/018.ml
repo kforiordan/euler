@@ -46,8 +46,23 @@ let rec shrink_row row =
   match row with
     [] -> []
   | x :: [] -> [x]
-  | x :: x' :: [] -> [max x x']
-  | x :: x' :: xs -> (max x x') :: shrink_row (x' :: xs);;
+  | x :: x' :: [] -> max x x' :: []
+  | x :: x' :: xs -> max x x' :: shrink_row (x' :: xs);;
 
-let triangle = read_triangle "triangle-small.txt";;
+let rec add_rows row row' =
+  match row, row' with
+    [], [] -> []
+  | (_, []) | ([], _) -> []  (* This is bad *)
+  | (x :: xs), (y :: ys) -> (x + y) :: add_rows xs ys;;
 
+let a = [8; 5; 9; 3];;
+let _ = shrink_row a;;
+let _ = add_rows (shrink_row a) (shrink_row a);;
+
+let solve triangle =
+  match triangle with
+    [] -> []
+  | hd :: tl ->
+
+
+let _ = solve triangle;;
