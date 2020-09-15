@@ -37,15 +37,17 @@ let triangle file =
   in
   triangle_matrix
 
-let solve triangle =
-  let i = Array.length triangle in
-  match i with
-    0 -> []
-  | 1 -> [(i, 0, triangle.(0).(0))]
-  | _ -> 
+let read_triangle file =
+  let raw_triangle = In_channel.read_lines file in
+  let line_to_nums l = List.map ~f:Int.of_string (Base.String.split ~on:' ' l) in
+  List.map ~f:line_to_nums raw_triangle;;
 
+let rec shrink_row row =
+  match row with
+    [] -> []
+  | x :: [] -> [x]
+  | x :: x' :: [] -> [max x x']
+  | x :: x' :: xs -> (max x x') :: shrink_row (x' :: xs);;
 
-let _ = solve (triangle "triangle-small.txt");;
-
-
+let triangle = read_triangle "triangle-small.txt";;
 
