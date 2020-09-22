@@ -81,37 +81,54 @@ let solve triangle =
   in
   aux (List.rev triangle) [];;
 
-let rec make_paths upper lower =
+(* A path is a list of integers.  A row is also a list of integers. *)
+
+let rec make_paths (upper:'a list) (lower:'a list list) : 'a list list =
   match (upper, lower) with
     ([], []) -> []
   | (x :: upper', []) -> [x] :: make_paths upper' []
-  | ([], y :: lower') -> []
-  | (x :: upper', y :: lower') -> [x; y] :: make_paths upper' lower'
+  | ([], _) -> []
+  | (x :: upper', y :: lower') -> (x :: y) :: make_paths upper' lower'
 
-let rec path_count path =
-  match path with
-    [] -> 0
-  | x :: xs -> x + path_count xs;;
+let path_sum = List.fold_left ~init:0 ~f:(+);;
 
-let rec best_paths paths =
+let path_cmp (path_a:'a list) (path_b:'a list) =
+  let a = path_sum path_a in
+  let b = path_sum path_b in
+  if a = b then 0
+  else if a > b then 1
+  else -1;;
+
+let path_max (path_a:'a list) (path_b:'a list) :'a list =
+  if path_cmp path_a path_b >= 0
+  then path_a
+  else path_b
+
+let rec best_paths (paths:'a list list) :'a list list =
   match paths with
     [] -> []
-  | x :: [] -> x
-  | x :: x' :: [] -> max (path_count x) (path_count x') :: []
-  | x :: x' :: xs -> max (path_count x) (path_count x') :: best_paths (x' :: xs)
+  | x :: [] -> [x]
+  | x :: x' :: [] -> path_max x x' :: []
+  | x :: x' :: xs -> path_max x x' :: best_paths (x' :: xs)
 
 let solve triangle =
-  let rec aux triangle' deferred path =
+  let rec aux triangle' deferred paths =
     match triangle' with
       [] -> []
-    | row :: [] ->
-       let paths = best_paths (make_paths row []) in
-       
-    | row :: rows -> aux rows (row :: deferred) path
+    | row :: [] -> best_paths (make_paths row [])
+    | row :: rows ->
+       let deferred' = row :: deferred in
+       let paths' = aux rows deferred' paths in
+       (*help*)
   in
   aux triangle [] []
 
-let a = [8; 5; 9; 3];;
-let b = [2; 4; 6];;
+let t1 = List.take triangle 1;;
+let t2 = List.take triangle 2;;
+let t3 = List.take triangle 3;;
+
+let _ = solve t1;;
+let _ = solve t2;;
+let _ = solve t3;;
 
 let _ = solve triangle;;
