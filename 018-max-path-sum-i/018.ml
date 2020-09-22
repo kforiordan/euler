@@ -42,27 +42,76 @@ let read_triangle file =
   let line_to_nums l = List.map ~f:Int.of_string (Base.String.split ~on:' ' l) in
   List.map ~f:line_to_nums raw_triangle;;
 
-let rec shrink_row row =
+let rec best_in_row row =
   match row with
     [] -> []
   | x :: [] -> [x]
   | x :: x' :: [] -> max x x' :: []
-  | x :: x' :: xs -> max x x' :: shrink_row (x' :: xs);;
+  | x :: x' :: xs -> max x x' :: best_in_row (x' :: xs);;
 
 let rec add_rows row row' =
   match row, row' with
     [], [] -> []
-  | (_, []) | ([], _) -> []  (* This is bad *)
+  | (_, []) | ([], _) -> []  (* This is very wrong, but with the given
+                                input it will never be reached. *)
   | (x :: xs), (y :: ys) -> (x + y) :: add_rows xs ys;;
 
+let rec align_rows row row' =
+  match row, row' with
+    [], [] -> []
+  | (_, []) | ([], _) -> []
+  | (x :: xs), (y :: ys) -> (x :: y :: []) :: align_rows xs ys;;
+
 let a = [8; 5; 9; 3];;
-let _ = shrink_row a;;
-let _ = add_rows (shrink_row a) (shrink_row a);;
+let b = [2; 4; 6];;
+let _ = best_in_row a;;
+let _ = add_rows (best_in_row a) b;;
+
+let triangle = read_triangle "triangle-small.txt";;
 
 let solve triangle =
-  match triangle with
-    [] -> []
-  | hd :: tl ->
+  let rec aux triangle' acc =
+    match triangle' with
+      [] -> []
+    | hd :: tl ->
+       let best = best_in_row hd in
+       match tl with
+         [] -> []
+       | hd' :: tl' -> align_rows best hd'
+  in
+  aux (List.rev triangle) [];;
 
+let rec make_paths upper lower =
+  match (upper, lower) with
+    ([], []) -> []
+  | (x :: upper', []) -> [x] :: make_paths upper' []
+  | ([], y :: lower') -> []
+  | (x :: upper', y :: lower') -> [x; y] :: make_paths upper' lower'
+
+let rec path_count path =
+  match path with
+    [] -> 0
+  | x :: xs -> x + path_count xs;;
+
+let rec best_paths paths =
+  match paths with
+    [] -> []
+  | x :: [] -> x
+  | x :: x' :: [] -> max (path_count x) (path_count x') :: []
+  | x :: x' :: xs -> max (path_count x) (path_count x') :: best_paths (x' :: xs)
+
+let solve triangle =
+  let rec aux triangle' deferred path =
+    match triangle' with
+      [] -> []
+    | row :: [] ->
+       let paths = best_paths (make_paths row []) in
+       
+    | row :: rows -> aux rows (row :: deferred) path
+  in
+  aux triangle [] []
+
+let a = [8; 5; 9; 3];;
+let b = [2; 4; 6];;
 
 let _ = solve triangle;;
