@@ -18,64 +18,74 @@
    and requires a clever method! ;o)
 *)
 
-(* Representing this triangle as a binary tree seems natural, so
-   before we solve the actual problem we have to read the triangle
-   from a file, and insert the values into a tree.  We need to insert
-   values in the order they appear, so the insert operation should not
-   attempt to balance the tree.  The tree should be filled
-   breadth-first - so we need a queue to track insertion order - and
-   honestly I can't think how to do that without using pointers (or
-   references).
-*)
-
 #require "core.top";;
 open Core;;
+open Base;;
 
-(* O(1) enqueue *)
-let enqueue q e = e :: q;;
+let read_triangle file =
+  let raw_triangle = In_channel.read_lines file in
+  let line_to_nums l = List.map ~f:Int.of_string (Base.String.split ~on:' ' l) in
+  List.map ~f:line_to_nums raw_triangle;;
 
-(* O(n) dequeue, lol. *)
-let rec dequeue q =
-  let rec aux q q' =
-    match q with
-      [] -> (None, [])
-    | hd :: [] -> (Some hd, List.rev q')
-    | hd :: tl -> aux tl (hd :: q')
-  in aux q [];;
+let rec make_paths (upper:'a list) (lower:'a list list) : 'a list list =
+  match (upper, lower) with
+    ([], []) -> []
+  | (x :: upper', []) -> [x] :: make_paths upper' []
+  | ([], _) -> []
+  | (x :: upper', y :: lower') -> (x :: y) :: make_paths upper' lower'
 
-(* Here's our simple tree data type. *)
-type 'a bt =
-  | Empty
-  | Node of 'a bt * 'a * 'a bt
+let path_sum = List.fold_left ~init:0 ~f:(+);;
 
-(* Depth-first insert, for comparison. *)
-let rec insert_df (tree:'a bt) n =
-  match tree with
-    Empty -> Node (Empty, n, Empty)
-  | Node (Empty, n', Empty) -> Node ((insert_df Empty n), n', Empty)
-  | Node (Empty, n', right) -> Node ((insert_df Empty n), n', right)
-  | Node (left, n', Empty) -> Node (left, n', insert_df Empty n)
-  | Node (left, n', right) -> Node ((insert_df left n), n', right);;
+let path_cmp (path_a:'a list) (path_b:'a list) =
+  let a = path_sum path_a in
+  let b = path_sum path_b in
+  if a = b then 0
+  else if a > b then 1
+  else -1;;
 
-let rec insert_bf (tree:'a bt) n =
-  Empty;;
+let path_max (path_a:'a list) (path_b:'a list) :'a list =
+  if path_cmp path_a path_b >= 0
+  then path_a
+  else path_b
 
-(* Reads a triangle from a given file; returns a list of values. *)
-let list_from_file filename =
-  let list_from_line line = Base.String.split ~on:' ' line in
-  let lines = In_channel.read_lines filename
+let rec best_paths (paths:'a list list) :'a list list =
+  match paths with
+    [] -> []
+  | x :: [] -> [x]
+  | x :: x' :: [] -> path_max x x' :: []
+  | x :: x' :: xs -> path_max x x' :: best_paths (x' :: xs)
+
+let solve triangle =
+  let rec aux triangle' deferred paths =
+    match triangle' with
+      [] -> []
+    | row :: [] -> best_paths (make_paths row [])
+    | row :: rows ->
+       let deferred' = row :: deferred in
+       let paths' = aux rows deferred' paths in
+       best_paths (make_paths row paths')
   in
-  List.fold_left ~f:(@) ~init:[]
-    (List.map ~f:list_from_line lines);;
+  let best_path = aux triangle [] []
+  in
+  match best_path with
+    [] -> 0, []
+  | x :: _ -> path_sum x, x;;
 
-let list_to_tree f l =
-  let rec aux tree l' =
-    match l' with
-      [] -> tree
-    | hd :: tl ->
-       let tree' = f tree hd in
-       aux tree' tl
-  in aux Empty l;;
+let a = [8; 5; 9; 3];;
+let b = [2; 4; 6];;
+let _ = best_in_row a;;
+let _ = add_rows (best_in_row a) b;;
 
-let list_to_tree_df = list_to_tree (insert_df);;
-let list_to_tree_bf = list_to_tree (insert_bf);;
+let triangle = read_triangle "triangle-small.txt";;
+let triangle = read_triangle "triangle.txt";;
+
+
+let t1 = List.take triangle 1;;
+let t2 = List.take triangle 2;;
+let t3 = List.take triangle 3;;
+
+let _ = solve t1;;
+let _ = solve t2;;
+let _ = solve t3;;
+
+let _ = solve triangle;;
