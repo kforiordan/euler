@@ -22,66 +22,10 @@
 open Core;;
 open Base;;
 
-let triangle file =
-  let raw_triangle = In_channel.read_lines file in
-  let n_lines = List.length raw_triangle in
-  let triangle_matrix = Array.create ~len:n_lines [||] in
-  let add_to_matrix i line =
-    let array_of_line line' =
-      Array.of_list
-        (List.map ~f:Int.of_string
-           (Base.String.split ~on:' ' line'))
-    in
-    triangle_matrix.(i) <- array_of_line line in
-  let _ = List.mapi ~f:add_to_matrix raw_triangle
-  in
-  triangle_matrix
-
 let read_triangle file =
   let raw_triangle = In_channel.read_lines file in
   let line_to_nums l = List.map ~f:Int.of_string (Base.String.split ~on:' ' l) in
   List.map ~f:line_to_nums raw_triangle;;
-
-let rec best_in_row row =
-  match row with
-    [] -> []
-  | x :: [] -> [x]
-  | x :: x' :: [] -> max x x' :: []
-  | x :: x' :: xs -> max x x' :: best_in_row (x' :: xs);;
-
-let rec add_rows row row' =
-  match row, row' with
-    [], [] -> []
-  | (_, []) | ([], _) -> []  (* This is very wrong, but with the given
-                                input it will never be reached. *)
-  | (x :: xs), (y :: ys) -> (x + y) :: add_rows xs ys;;
-
-let rec align_rows row row' =
-  match row, row' with
-    [], [] -> []
-  | (_, []) | ([], _) -> []
-  | (x :: xs), (y :: ys) -> (x :: y :: []) :: align_rows xs ys;;
-
-let a = [8; 5; 9; 3];;
-let b = [2; 4; 6];;
-let _ = best_in_row a;;
-let _ = add_rows (best_in_row a) b;;
-
-let triangle = read_triangle "triangle-small.txt";;
-
-let solve triangle =
-  let rec aux triangle' acc =
-    match triangle' with
-      [] -> []
-    | hd :: tl ->
-       let best = best_in_row hd in
-       match tl with
-         [] -> []
-       | hd' :: tl' -> align_rows best hd'
-  in
-  aux (List.rev triangle) [];;
-
-(* A path is a list of integers.  A row is also a list of integers. *)
 
 let rec make_paths (upper:'a list) (lower:'a list list) : 'a list list =
   match (upper, lower) with
@@ -119,9 +63,22 @@ let solve triangle =
     | row :: rows ->
        let deferred' = row :: deferred in
        let paths' = aux rows deferred' paths in
-       (*help*)
+       best_paths (make_paths row paths')
   in
-  aux triangle [] []
+  let best_path = aux triangle [] []
+  in
+  match best_path with
+    [] -> 0, []
+  | x :: _ -> path_sum x, x;;
+
+let a = [8; 5; 9; 3];;
+let b = [2; 4; 6];;
+let _ = best_in_row a;;
+let _ = add_rows (best_in_row a) b;;
+
+let triangle = read_triangle "triangle-small.txt";;
+let triangle = read_triangle "triangle.txt";;
+
 
 let t1 = List.take triangle 1;;
 let t2 = List.take triangle 2;;
