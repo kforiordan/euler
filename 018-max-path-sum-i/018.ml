@@ -10,21 +10,7 @@
 
    Find the maximum total from top to bottom of the triangle below:
 
-					              75
-					            95  64
-						  17  47  82
-						18  35  87  10
-					      20  04  82  47  65
-19 01 23 75 03 34
-88 02 77 73 07 63 67
-99 65 04 28 06 16 70 92
-41 41 26 56 83 40 80 70 33
-41 48 72 33 47 32 37 16 94 29
-53 71 44 65 25 43 91 52 97 51 14
-70 11 33 28 77 73 17 78 39 68 17 57
-91 71 52 38 17 14 91 43 58 50 27 29 48
-63 66 04 68 89 53 67 30 73 16 69 87 40 31
-04 62 98 27 23 09 70 98 73 93 38 53 60 04 23
+     [see triangle.txt; also triangle-small.txt]
 
    NOTE: As there are only 16384 routes, it is possible to solve this problem
    by trying every route. However, Problem 67, is the same challenge with a
@@ -32,3 +18,74 @@
    and requires a clever method! ;o)
 *)
 
+#require "core.top";;
+open Core;;
+open Base;;
+
+let read_triangle file =
+  let raw_triangle = In_channel.read_lines file in
+  let line_to_nums l = List.map ~f:Int.of_string (Base.String.split ~on:' ' l) in
+  List.map ~f:line_to_nums raw_triangle;;
+
+let rec make_paths (upper:'a list) (lower:'a list list) : 'a list list =
+  match (upper, lower) with
+    ([], []) -> []
+  | (x :: upper', []) -> [x] :: make_paths upper' []
+  | ([], _) -> []
+  | (x :: upper', y :: lower') -> (x :: y) :: make_paths upper' lower'
+
+let path_sum = List.fold_left ~init:0 ~f:(+);;
+
+let path_cmp (path_a:'a list) (path_b:'a list) =
+  let a = path_sum path_a in
+  let b = path_sum path_b in
+  if a = b then 0
+  else if a > b then 1
+  else -1;;
+
+let path_max (path_a:'a list) (path_b:'a list) :'a list =
+  if path_cmp path_a path_b >= 0
+  then path_a
+  else path_b
+
+let rec best_paths (paths:'a list list) :'a list list =
+  match paths with
+    [] -> []
+  | x :: [] -> [x]
+  | x :: x' :: [] -> path_max x x' :: []
+  | x :: x' :: xs -> path_max x x' :: best_paths (x' :: xs)
+
+let solve triangle =
+  let rec aux triangle' deferred paths =
+    match triangle' with
+      [] -> []
+    | row :: [] -> best_paths (make_paths row [])
+    | row :: rows ->
+       let deferred' = row :: deferred in
+       let paths' = aux rows deferred' paths in
+       best_paths (make_paths row paths')
+  in
+  let best_path = aux triangle [] []
+  in
+  match best_path with
+    [] -> 0, []
+  | x :: _ -> path_sum x, x;;
+
+let a = [8; 5; 9; 3];;
+let b = [2; 4; 6];;
+let _ = best_in_row a;;
+let _ = add_rows (best_in_row a) b;;
+
+let triangle = read_triangle "triangle-small.txt";;
+let triangle = read_triangle "triangle.txt";;
+
+
+let t1 = List.take triangle 1;;
+let t2 = List.take triangle 2;;
+let t3 = List.take triangle 3;;
+
+let _ = solve t1;;
+let _ = solve t2;;
+let _ = solve t3;;
+
+let _ = solve triangle;;
