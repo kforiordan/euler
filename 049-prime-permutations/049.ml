@@ -10,6 +10,12 @@ What 12-digit number do you form by concatenating the three terms in this
 sequence?
 *)
 
+
+(* So we want three terms, each of 4 digits, each prime, and each a
+   permutation of the other two.  First I'll identify the primes, then
+   for each of those find its permutations and see if any of them
+   occur in the list of primes. *)
+
 open Base;;
 
 (* I really need to write a module for functions like this. *)
@@ -26,9 +32,6 @@ let is_prime n =
   in
   if n < 2 then false else aux 2;;
 
-(* Anyway, so we want three terms, each of 4 digits, each prime, and
-   each a permutation of the other two. *)
-
 (* Again: module *)
 let digits n =
   let rec aux n' digits =
@@ -38,37 +41,83 @@ let digits n =
       in aux n'' (r :: digits)
   in aux n [];;
 
-  let cap_lists (head :'a) (tails :'a list list) :'a list list =
-    List.map ~f:(fun x -> head :: x) tails;;
-
-(* And again: module *)
-let rec permute (l:int list) :int list list =
-  let cap_lists (head :int) (tails :int list list) :int list list =
-    List.map ~f:(fun x -> head :: x) tails
-  in
-  let rec adj (prev:int list) (remaining:int list) :int list list =
-    match remaining with
-      [] -> []
-    | x :: remaining' -> let peer = 111 :: x :: 222 :: (prev @ (333 :: remaining')) in
-                         let prev' = x :: prev in
-                         peer :: (adj prev' remaining')
-  in
-  adj [] l;;
-
-
-let _ = permute [1;2;3];;
-let _ = permute [1;2;3;4];;
-
-(* We'll start with the easiest thing: identify the primes. *)
-let primes = List.filter ~f:is_prime (List.range 1000 9999);;
-
-
+o(* The inverse of the digits function. *)
 let combine digits =
   let rec aux digits power =
     match digits with
       [] -> 0
-    | x :: xs -> (x * int_of_float (10. ** (float_of_int power))) +
+    | x :: xs -> (x * (10 ** power)) +
                    aux xs (power+1)
   in aux (List.rev digits) 0;;
 
+
+(* It took me far too long to write this permutation function.  It
+   could be optimised - memoization is the first thing I can think of
+   - but not tonight. *)
+let rec permute l =
+  let cap_lists head tails = List.map ~f:(fun x -> head :: x) tails in
+  match l with
+    [] -> []
+  | x :: [] -> [[x]]
+  | x :: x' :: [] -> [[x;x'];[x';x]]
+  | x :: xs ->
+     let rec adj prev remaining =
+       match remaining with
+         [] -> []
+       | x :: remaining' ->
+          (cap_lists x (permute (prev @ remaining'))) @ adj (x :: prev) remaining'
+     in adj [] l;;
+
+
 let is_palindrome a b = a = combine (List.rev (digits b));;
+
+(* We can strip out any primes containing zeroes. *)
+let contains_zero n =
+  let f b i = b || i = 0 in
+  let d = digits n in
+  List.fold ~init:false ~f:f d;;
+
+(* And we can strip out any primes containing two or more even numbers. *)
+let contains_two_evens n =
+  let is_even i = i % 2 = 0 in
+  let f b i = b + (if is_even i then 1 else 0) in
+  let d = digits n in
+  if (List.fold ~init:0 ~f:f d) >= 2
+  then true
+  else false;;
+
+let primes = List.filter ~f:is_prime (List.range ~stride:2 1001 10000);;
+
+let pair n =
+  let cmp a b = if a < b then -1 else if a = b then 0 else 1 in
+  let sort = List.sort ~compare:cmp in
+  combine (sort (digits n));;
+
+let hmm =
+  let cmp (a,a') (b,b') = if a < b then -1 else if a = b then 0 else 1 in
+  List.sort ~compare:cmp
+    (List.filter ~f:(fun (a,b) -> a > 1000)
+       (List.map ~f:(fun x -> (pair x), x) primes));;
+
+
+let rec f l =
+  let rec aux prev l' =
+    match l' with
+      [] -> []
+    | (i,n) :: tl ->
+       if i = prev
+       then n :: aux i tl
+       else aux i tl
+  in
+  aux 0 l;;
+
+
+let lol = List.map ~f:permute (List.map ~f:digits primes);;
+
+let rofl = List.map ~f:(fun x -> List.map ~f:combine x) lol;;
+
+let foo = List.map ~f:(fun x -> List.filter ~f:(fun y -> y > 1000) x) rofl;;
+
+let bar = List.map ~f:(fun x -> List.filter ~f:is_prime x) foo;;
+
+let quux = List.filter ~f:(fun x -> List.length x >= 3) bar;;
