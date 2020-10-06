@@ -29,20 +29,48 @@ NOTE: Wording was modified slightly on 24 April 2007 to emphasise the
 theoretical nature of Lychrel numbers.
 *)
 
+open Base;;
+#require "zarith";;
+
 let digits n =
-  let rec aux n' digits =
-    if n' = 0 then digits
+  let rec aux n' l =
+    if Z.equal n' Z.zero then l
     else
-      let n'' = n' / 10 and r = n' mod 10
-      in aux n'' (r :: digits)
+      let ten = Z.of_int 10 in
+      let n'' = Z.div n' ten and r = Z.(mod) n' ten
+      in aux n'' (r :: l)
   in aux n [];;
 
 let combine digits =
   let rec aux digits power =
     match digits with
-      [] -> 0
-    | x :: xs -> (x * int_of_float (10. ** (float_of_int power))) +
-                   aux xs (power+1)
+      [] -> Z.zero
+    | x :: xs -> Z.add (Z.mul x (Z.pow (Z.of_int 10) power))
+                   (aux xs (power+1))
   in aux (List.rev digits) 0;;
 
-let is_palindrome a b = a = combine (List.rev (digits b));;
+let reverse n = combine (List.rev (digits n));;
+
+let add_own_reverse n = Z.add n (reverse n);;
+
+let is_palindrome a = Z.equal a (reverse a);;
+
+let is_lychrel n =
+  let limit = 50 in
+  let rec aux i n' =
+    if i = limit
+    then true
+    else
+      let n'' = add_own_reverse n' in
+      if is_palindrome n''
+      then false
+      else aux (i+1) n''
+  in aux 0 n;;
+
+let lychrel_numbers =
+  List.map ~f:Z.to_int
+    (List.filter ~f:is_lychrel
+       (List.map ~f:Z.of_int
+          (List.range 1 10001)));;
+
+let solution = List.length lychrel_numbers;;
