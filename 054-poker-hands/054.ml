@@ -76,3 +76,97 @@ type card =
 | Jack of suit
 | Minor_card of suit * int;;
 
+let suit = function Ace s | King s | Queen s | Jack s -> s
+                    | Minor_card (s, i) -> s;;
+
+let value = function
+  | Ace s -> 14
+  | King s -> 13
+  | Queen s -> 12
+  | Jack s -> 11
+  | Minor_card (s, i) -> i;;
+
+let cmp_cards a b =
+  if value a < value b then -1
+  else if value a > value b then 1
+  else 0;;
+
+let high hand =
+  let rec aux hand' high' =
+    match hand', high' with
+      [], _ -> high'
+    | card :: cards, None -> aux cards (Some card)
+    | card :: cards, (Some high'') -> if cmp_cards card high'' = 1
+                                      then aux cards (Some card)
+                                      else aux cards (Some high'')
+  in aux hand None;;
+
+let is_valid (hand:card list) = List.length hand = 5;;
+
+let is_straight hand =
+  if is_valid hand then
+    let hand' = List.sort ~compare:cmp_cards hand in
+    let rec aux prev_value cards =
+      match cards with
+        [] -> true
+      | x :: xs -> let v = value x in if prev_value = 0 || v = (prev_value+1)
+                                      then aux v xs
+                                      else false
+    in
+    aux 0 (List.sort ~compare:cmp_cards hand')
+  else
+    false;;
+
+let same_suit a b =
+  match suit a, suit b with
+    Clubs, Clubs | Diamonds, Diamonds | Hearts, Hearts | Spades, Spades -> true
+    | _, _ -> false;;
+
+let is_flush hand =
+  if is_valid hand then
+    let hand' = List.sort ~compare:cmp_cards hand in
+    let rec aux cards prev =
+      match cards, prev with
+        [], _ -> true
+      | x :: xs, None -> aux xs (Some x)
+      | x :: xs, (Some s) when same_suit s x -> aux xs prev
+      | x :: xs, (Some s) -> false
+    in aux hand' None
+  else
+    false;;
+
+let is_straight_flush hand = is_straight hand && is_flush hand;;
+
+let is_royal_flush hand = is_straight_flush hand &&
+                            match hand with
+                              hd :: tl when value hd = 10 -> true
+                            | _ -> false;;
+
+let worthless_hand = [Queen Diamonds;
+                      Jack Clubs;
+                      Minor_card (Hearts, 3);
+                      Minor_card (Spades, 5);
+                      Minor_card (Hearts, 2)];;
+
+let straight_hand = [Minor_card (Hearts, 8);
+                     Minor_card (Hearts, 9);
+                     Minor_card (Spades, 7);
+                     Minor_card (Spades, 10);
+                     Jack Clubs];;
+
+let flush_hand = [Minor_card (Clubs, 4);
+                  Minor_card (Clubs, 2);
+                  Minor_card (Clubs, 8);
+                  King Clubs;
+                  Ace Clubs];;
+
+let _ = is_straight straight_hand;;
+let _ = is_straight worthless_hand;;
+
+let _ = is_flush straight_hand;;
+let _ = is_flush flush_hand;;
+
+let _ = is_royal_flush straight_hand;;
+let _ = is_royal_flush flush_hand;;
+
+let hand = [(Minor_card (Hearts, 4)); (Ace Hearts); Minor_card (Spades, 9)];;
