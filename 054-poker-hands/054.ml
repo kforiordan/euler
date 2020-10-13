@@ -1,3 +1,4 @@
+
 (*
     In the card game poker, a hand consists of five cards and are
     ranked, from lowest to highest, in the following way:
@@ -76,8 +77,31 @@ type card =
 | Jack of suit
 | Minor_card of suit * int;;
 
+(* type rank =
+ *   High_card of int
+ * | One_pair of int
+ * | Two_pairs of int * int
+ * | Three_of_a_kind of int
+ * | Straight of int
+ * | Flush of int
+ * | Full_house of int * int
+ * | Four_of_a_kind of int
+ * | Straight_flush of int
+ * | Royal_flush *)
+
 let suit = function Ace s | King s | Queen s | Jack s -> s
                     | Minor_card (s, i) -> s;;
+
+(* let rank_exponent = function
+ *   | High_card c -> 
+ *   | One_pair c -> 2
+ *   | Two_pairs c -> 4
+ *   | Three_of_a_kind c -> 8
+ *   | Straight c -> 8
+ *   | Flush c -> 16
+ *   | Full_house c -> 32
+ *   | Four_of_a_kind -> 64
+ *   |  *)
 
 let value = function
   | Ace s -> 14
@@ -91,6 +115,27 @@ let cmp_cards a b =
   else if value a > value b then 1
   else 0;;
 
+let e hand =
+  let hand' = List.sort ~compare:cmp_cards hand in
+  let magic = 16 in
+  let rec aux i cards =
+    match cards with
+      [] -> 0
+    | x :: xs -> (value x) + (magic ** i) + aux (i+1) xs
+  in aux 0 hand';;
+
+let _ = e [Minor_card (Hearts, 2);
+           Minor_card (Clubs, 4)];;
+
+let is_valid (hand:card list) = List.length hand = 5;;
+
+let is_same_suit a b =
+  match suit a, suit b with
+    Clubs, Clubs | Diamonds, Diamonds | Hearts, Hearts | Spades, Spades -> true
+    | _, _ -> false;;
+
+let is_same_value a b = value a = value b
+
 let high hand =
   let rec aux hand' high' =
     match hand', high' with
@@ -100,8 +145,6 @@ let high hand =
                                       then aux cards (Some card)
                                       else aux cards (Some high'')
   in aux hand None;;
-
-let is_valid (hand:card list) = List.length hand = 5;;
 
 let is_straight hand =
   if is_valid hand then
@@ -117,11 +160,6 @@ let is_straight hand =
   else
     false;;
 
-let same_suit a b =
-  match suit a, suit b with
-    Clubs, Clubs | Diamonds, Diamonds | Hearts, Hearts | Spades, Spades -> true
-    | _, _ -> false;;
-
 let is_flush hand =
   if is_valid hand then
     let hand' = List.sort ~compare:cmp_cards hand in
@@ -129,7 +167,7 @@ let is_flush hand =
       match cards, prev with
         [], _ -> true
       | x :: xs, None -> aux xs (Some x)
-      | x :: xs, (Some s) when same_suit s x -> aux xs prev
+      | x :: xs, (Some s) when is_same_suit s x -> aux xs prev
       | x :: xs, (Some s) -> false
     in aux hand' None
   else
@@ -141,6 +179,77 @@ let is_royal_flush hand = is_straight_flush hand &&
                             match hand with
                               hd :: tl when value hd = 10 -> true
                             | _ -> false;;
+
+let is_full_house hand =
+  let rec aux cards 
+
+let is_of_a_kind n hand =
+  let rec aux cards prev i =
+    match cards, prev with
+      [], _ -> i >= n
+    | x :: xs, None -> aux xs (Some x) (i+1)
+    | x :: xs, (Some v) ->
+       if i >= n
+       then true
+       else
+         if is_same_value v x
+         then aux xs prev (i+1)
+         else aux xs (Some x) 1
+  in aux (List.sort ~compare:cmp_cards hand) None 0;;
+
+let is_one_pair = is_of_a_kind 2;;
+let is_three_of_a_kind = is_of_a_kind 3;;
+let is_four_of_a_kind = is_of_a_kind 4;;
+
+let is_two_pairs hand = false;;
+let is_full_house hand = false;;
+
+(* This is broken.  In the case of hands of similar rank it will
+   compare both hands as if they both contained nothing.  e.g., given
+   [8;8;6;5;4] and [6;6;Q;3;2] this function will choose the latter as
+   the winner, though a pair of 8s should beat a pair of sixes.
+
+   I'll replace the is_* functions with score_* functions that will
+   allow proper comparison.
+  *)
+let compare_hands a b =
+  let rec high_cmp a b =
+    match a, b with
+      [], [] -> 0
+    | x :: xs, y :: ys -> let v = cmp_cards x y in
+                          if v = 0
+                          then high_cmp xs ys
+                          else v
+    | _, _ -> 0 (* BUG!  Should raise exception here. *)
+  in
+  let tests = [is_royal_flush;
+               is_straight_flush;
+               is_four_of_a_kind;
+               is_full_house;
+               is_flush;
+               is_straight;
+               is_three_of_a_kind;
+               is_two_pairs;
+               is_one_pair]
+  in
+  let aux_cmp t a b =
+    match t a, t b with
+      true, true -> high_cmp a b
+    | false, true -> -1
+    | false, false -> 0
+    | true, false -> 1
+  in
+  let rec compare_hands' tests' a' b' =
+    match tests' with
+      [] -> high_cmp a' b'
+    | t :: ts -> let v = aux_cmp t a' b' in
+                 if v = 0
+                 then compare_hands' ts a' b'
+                 else v
+  in compare_hands' tests a b;;
+
+
+let hand = [(Minor_card (Hearts, 4)); (Ace Hearts); Minor_card (Spades, 9)];;
 
 let worthless_hand = [Queen Diamonds;
                       Jack Clubs;
@@ -160,6 +269,25 @@ let flush_hand = [Minor_card (Clubs, 4);
                   King Clubs;
                   Ace Clubs];;
 
+let p2 = [Minor_card (Clubs, 3);
+          Minor_card (Hearts, 3);
+          Minor_card (Clubs, 2);
+          Jack Clubs;
+          Minor_card (Diamonds, 4)];;
+
+let p3 = [Minor_card (Clubs, 4);
+          Minor_card (Hearts, 3);
+          Minor_card (Clubs, 3);
+          Jack Clubs;
+          Minor_card (Diamonds, 4)];;
+
+let p4 = [Minor_card (Clubs, 4);
+          Minor_card (Hearts, 3);
+          Minor_card (Clubs, 3);
+          Minor_card (Diamonds, 3);
+          Minor_card (Diamonds, 4)];;
+
+
 let _ = is_straight straight_hand;;
 let _ = is_straight worthless_hand;;
 
@@ -169,4 +297,3 @@ let _ = is_flush flush_hand;;
 let _ = is_royal_flush straight_hand;;
 let _ = is_royal_flush flush_hand;;
 
-let hand = [(Minor_card (Hearts, 4)); (Ace Hearts); Minor_card (Spades, 9)];;
